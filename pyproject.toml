@@ -10,6 +10,11 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 keywords = ["blackjack", "card-counting", "pygame", "game", "trainer", "casino"]
+
+# Single Python module
+[tool.poetry.packages]
+py-modules = ["game"]
+
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
