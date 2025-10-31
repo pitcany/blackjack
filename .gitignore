@@ -36,3 +36,7 @@ ENV/
 .DS_Store
 Thumbs.db
 
+-e 
+# Environment files
+*.env
+*.env.*
