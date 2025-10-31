@@ -26,7 +26,7 @@ dependencies = [
 
 # Entry point - allows running 'blackjack' command after installation
 [project.scripts]
-blackjack = "game:main"
+blackjack = "blackjack_card_counter:main"
 
 # Project URLs
 [project.urls]
@@ -47,7 +47,7 @@ dev = [
 
 # Poetry-specific configuration
 [tool.poetry]
-package-mode = false
+package-mode = true
 
 # Build system
 [build-system]
