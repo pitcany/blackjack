@@ -58,7 +58,11 @@ class TextInput:
     
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
+            was_active = self.active
             self.active = self.rect.collidepoint(event.pos)
+            # Clear text when clicking into an inactive field
+            if self.active and not was_active:
+                self.text = ""
         
         if event.type == pygame.KEYDOWN and self.active:
             if event.key == pygame.K_RETURN:
@@ -331,9 +335,12 @@ class BlackjackGame:
             
             if dealer_value == 21:
                 self.message = "Push! Both have blackjack"
+                # No money changes hands on a push
             else:
-                self.message = "Blackjack! You win 3:2"
-                self.bankroll += int(self.current_bet * 1.5)
+                # Blackjack pays 3:2 - you win 1.5x your bet
+                blackjack_winnings = int(self.current_bet * 1.5)
+                self.bankroll += blackjack_winnings
+                self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
             self.game_state = 'finished'
         else:
             self.game_state = 'playing'
@@ -801,13 +808,23 @@ class BlackjackGame:
             
             # Game state specific handling
             if self.game_state == 'betting':
-                self.custom_bet_input.handle_event(event)
-                self.deck_input.handle_event(event)
+                # Handle deck input
+                if self.deck_input.handle_event(event):
+                    # User pressed Enter
+                    deck_count = self.deck_input.get_value()
+                    if 1 <= deck_count <= 8:
+                        self.num_decks = deck_count
+                        self.initialize_deck()
                 
+                # Handle custom bet input
+                self.custom_bet_input.handle_event(event)
+                
+                # Update bet from custom input as they type
                 custom_bet = self.custom_bet_input.get_value()
                 if custom_bet > 0:
                     self.current_bet = custom_bet
                 
+                # Check deck input for immediate updates
                 deck_count = self.deck_input.get_value()
                 if 1 <= deck_count <= 8 and deck_count != self.num_decks:
                     self.num_decks = deck_count
