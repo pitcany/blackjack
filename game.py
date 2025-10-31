@@ -885,6 +885,11 @@ class BlackjackGame:
         sys.exit()
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for the blackjack game."""
     game = BlackjackGame()
     game.run()
+
+
+if __name__ == "__main__":
+    main()
