@@ -1,13 +1,15 @@
-[tool.poetry]
+# Modern Poetry configuration using PEP 621 standard
+[project]
 name = "blackjack-card-counter"
 version = "0.1.0"
 description = "A Pygame-based blackjack card counting trainer application that helps users practice card counting techniques and basic blackjack strategy."
-authors = ["pitcany <pitcany@gmail.com>"]
+authors = [
+    {name = "pitcany", email = "pitcany@gmail.com"}
+]
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
+requires-python = ">=3.10"
 keywords = ["blackjack", "card-counting", "pygame", "game", "trainer", "casino"]
-homepage = "https://github.com/pitcany/blackjack"
-repository = "https://github.com/pitcany/blackjack"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
@@ -19,25 +21,38 @@ classifiers = [
 ]
 
 # Main dependencies
-[tool.poetry.dependencies]
-python = "^3.10"
-pygame = "^2.6.1"
-
-# Development dependencies
-[tool.poetry.group.dev.dependencies]
-black = "^24.0.0"
-flake8 = "^7.0.0"
-mypy = "^1.8.0"
-pytest = "^8.0.0"
-pytest-cov = "^4.1.0"
-isort = "^5.13.0"
+dependencies = [
+    "pygame>=2.6.1,<3.0.0"
+]
 
 # Entry point - allows running 'blackjack' command after installation
-[tool.poetry.scripts]
+[project.scripts]
 blackjack = "game:main"
 
+# Project URLs
+[project.urls]
+Homepage = "https://github.com/pitcany/blackjack"
+Repository = "https://github.com/pitcany/blackjack"
+Issues = "https://github.com/pitcany/blackjack/issues"
+
+# Optional dependencies (development tools)
+[project.optional-dependencies]
+dev = [
+    "black>=24.0.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "isort>=5.13.0",
+]
+
+# Poetry-specific configuration
+[tool.poetry]
+package-mode = true
+
+# Build system
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 # Black configuration
