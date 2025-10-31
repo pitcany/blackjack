@@ -1,17 +1,65 @@
-[project]
-name = "blackjack"
+[tool.poetry]
+name = "blackjack-card-counter"
 version = "0.1.0"
-description = "blackjack game"
-authors = [
-    {name = "pitcany",email = "pitcany@gmail.com"}
-]
+description = "A Pygame-based blackjack card counting trainer application that helps users practice card counting techniques and basic blackjack strategy."
+authors = ["pitcany <pitcany@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "pygame (>=2.6.1,<3.0.0)"
+license = "MIT"
+keywords = ["blackjack", "card-counting", "pygame", "game", "trainer", "casino"]
+homepage = "https://github.com/pitcany/blackjack"
+repository = "https://github.com/pitcany/blackjack"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Games/Entertainment",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
+# Main dependencies
+[tool.poetry.dependencies]
+python = "^3.10"
+pygame = "^2.6.1"
+
+# Development dependencies
+[tool.poetry.group.dev.dependencies]
+black = "^24.0.0"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+pytest = "^8.0.0"
+pytest-cov = "^4.1.0"
+isort = "^5.13.0"
+
+# Entry point - allows running 'blackjack' command after installation
+[tool.poetry.scripts]
+blackjack = "game:main"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+# isort configuration
+[tool.isort]
+profile = "black"
+line_length = 100
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+# pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
