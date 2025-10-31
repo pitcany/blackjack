@@ -1,6 +1,16 @@
+"""Blackjack Card Counting Trainer - A pygame-based card counting practice tool.
+
+This package provides a complete blackjack game with card counting features,
+basic strategy recommendations, and betting advice based on the Hi-Lo counting system.
+"""
+
+__version__ = "0.1.0"
+__author__ = "pitcany"
+
 import pygame
-import random
-import sys
+
+# Initialize pygame when package is imported
+pygame.init()
 
 # Initialize Pygame
 pygame.init()
