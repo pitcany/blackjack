@@ -7,7 +7,7 @@ authors = [
     {name = "pitcany", email = "pitcany@gmail.com"}
 ]
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 keywords = ["blackjack", "card-counting", "pygame", "game", "trainer", "casino"]
 classifiers = [
