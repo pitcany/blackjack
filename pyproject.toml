@@ -54,12 +54,6 @@ dev = [
 [tool.poetry]
 package-mode = true
 
-# Since we have a single module, specify it explicitly
-[tool.poetry.packages]
-include = [
-    { path = "game.py", format = ["sdist", "wheel"] }
-]
-
 # Build system
 [build-system]
 requires = ["poetry-core>=2.0.0"]
