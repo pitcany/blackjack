@@ -202,13 +202,100 @@ blackjack/
 
 ### Building
 
+#### Quick Build
 ```bash
-# Build distributions (wheel and source)
+# Build both wheel and source distribution
 poetry build
+```
 
-# Output:
-# dist/blackjack_card_counter-0.1.0-py3-none-any.whl
-# dist/blackjack_card_counter-0.1.0.tar.gz
+**Output:**
+```
+dist/
+├── blackjack_card_counter-0.1.0-py3-none-any.whl  # Wheel (fast install)
+└── blackjack_card_counter-0.1.0.tar.gz            # Source distribution
+```
+
+#### Build Workflows
+
+**Standard Build:**
+```bash
+# 1. Install dependencies
+poetry install
+
+# 2. Verify configuration
+poetry check
+
+# 3. Build packages
+poetry build
+```
+
+**Clean Build:**
+```bash
+# Remove old builds
+rm -rf dist/
+
+# Build fresh
+poetry build
+```
+
+**Build Specific Format:**
+```bash
+# Build only wheel
+poetry build --format wheel
+
+# Build only source distribution
+poetry build --format sdist
+```
+
+**Version Bump & Build:**
+```bash
+# Bump version (patch: 0.1.0 → 0.1.1)
+poetry version patch
+
+# Build with new version
+poetry build
+```
+
+#### Pre-Build Checklist
+```bash
+# Format code
+poetry run black blackjack_card_counter/
+
+# Sort imports
+poetry run isort blackjack_card_counter/
+
+# Lint
+poetry run flake8 blackjack_card_counter/
+
+# Verify config
+poetry check
+
+# Build
+poetry build
+```
+
+#### Verify Build
+```bash
+# Check built files
+ls -lh dist/
+
+# Inspect wheel contents
+unzip -l dist/blackjack_card_counter-*.whl
+
+# Test installation
+pip install dist/blackjack_card_counter-*.whl
+blackjack
+```
+
+#### Distribute
+```bash
+# Share wheel file
+cp dist/blackjack_card_counter-*.whl ~/Downloads/
+
+# Or create archive
+zip -r blackjack-dist.zip dist/
+
+# Upload to GitHub releases or share directly
 ```
 
 ### Testing
