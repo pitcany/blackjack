@@ -30,6 +30,33 @@ blackjack_card_counter/
 
 See [MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md) for detailed architecture documentation.
 
+## 🚀 Quick Start
+
+### Install and Run
+```bash
+# Using Poetry (recommended)
+poetry install
+poetry run blackjack
+
+# Using pip (from built wheel)
+pip install dist/blackjack_card_counter-0.1.0-py3-none-any.whl
+blackjack
+```
+
+### Build from Source
+```bash
+# Clone repository
+git clone https://github.com/pitcany/blackjack.git
+cd blackjack
+
+# Build wheel
+poetry build
+
+# Install and run
+pip install dist/blackjack_card_counter-*.whl
+blackjack
+```
+
 ## 📦 Installation
 
 ### Option 1: Using Poetry (Recommended)
