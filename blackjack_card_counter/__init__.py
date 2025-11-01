@@ -20,4 +20,4 @@ def main():
     game.run()
 
 
-__all__ = ['BlackjackGame', 'main']
+__all__ = ["BlackjackGame", "main"]

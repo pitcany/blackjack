@@ -1,4 +1,5 @@
 """Card class and deck management."""
+
 import random
 from typing import List
 
@@ -20,9 +21,9 @@ class Card:
             0 for neutral cards (7-9)
             -1 for high cards (10, J, Q, K, A)
         """
-        if self.rank in ['2', '3', '4', '5', '6']:
+        if self.rank in ["2", "3", "4", "5", "6"]:
             return 1
-        elif self.rank in ['10', 'J', 'Q', 'K', 'A']:
+        elif self.rank in ["10", "J", "Q", "K", "A"]:
             return -1
         return 0
 
@@ -61,10 +62,10 @@ def calculate_hand_value(hand: List[Card]) -> int:
     aces = 0
 
     for card in hand:
-        if card.rank == 'A':
+        if card.rank == "A":
             aces += 1
             value += 11
-        elif card.rank in ['J', 'Q', 'K']:
+        elif card.rank in ["J", "Q", "K"]:
             value += 10
         else:
             value += int(card.rank)

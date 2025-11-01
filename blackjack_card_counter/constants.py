@@ -1,4 +1,5 @@
 """Constants for the Blackjack Card Counter game."""
+
 import pygame
 
 pygame.init()
@@ -25,13 +26,13 @@ CARD_WIDTH = 80
 CARD_HEIGHT = 120
 
 # Fonts - using system fonts for better Unicode support
-TITLE_FONT = pygame.font.SysFont('arial', 60, bold=True)
-LARGE_FONT = pygame.font.SysFont('arial', 48, bold=True)
-MEDIUM_FONT = pygame.font.SysFont('arial', 36)
-SMALL_FONT = pygame.font.SysFont('arial', 28)
-TINY_FONT = pygame.font.SysFont('arial', 20)
-CARD_FONT = pygame.font.SysFont('arial', 36, bold=True)
+TITLE_FONT = pygame.font.SysFont("arial", 60, bold=True)
+LARGE_FONT = pygame.font.SysFont("arial", 48, bold=True)
+MEDIUM_FONT = pygame.font.SysFont("arial", 36)
+SMALL_FONT = pygame.font.SysFont("arial", 28)
+TINY_FONT = pygame.font.SysFont("arial", 20)
+CARD_FONT = pygame.font.SysFont("arial", 36, bold=True)
 
 # Game constants
-SUITS = ['♠', '♥', '♦', '♣']
-RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+SUITS = ["♠", "♥", "♦", "♣"]
+RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]

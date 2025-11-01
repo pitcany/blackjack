@@ -1,4 +1,5 @@
 """Main game class for Blackjack Card Counter."""
+
 import pygame
 import sys
 from typing import List
@@ -7,10 +8,27 @@ from .card import Card, create_deck, calculate_hand_value
 from .ui import Button, TextInput
 from .strategy import get_true_count, get_betting_advice, get_basic_strategy
 from .constants import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
-    GREEN, DARK_GREEN, WHITE, BLACK, RED, GOLD, BLUE, GRAY, LIGHT_GRAY, YELLOW,
-    CARD_WIDTH, CARD_HEIGHT,
-    TITLE_FONT, LARGE_FONT, MEDIUM_FONT, SMALL_FONT, TINY_FONT, CARD_FONT
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    FPS,
+    GREEN,
+    DARK_GREEN,
+    WHITE,
+    BLACK,
+    RED,
+    GOLD,
+    BLUE,
+    GRAY,
+    LIGHT_GRAY,
+    YELLOW,
+    CARD_WIDTH,
+    CARD_HEIGHT,
+    TITLE_FONT,
+    LARGE_FONT,
+    MEDIUM_FONT,
+    SMALL_FONT,
+    TINY_FONT,
+    CARD_FONT,
 )
 
 
@@ -31,8 +49,8 @@ class BlackjackGame:
         self.cards_dealt = 0
         self.bankroll = 1000
         self.current_bet = 10
-        self.game_state = 'betting'
-        self.message = 'Place your bet to start'
+        self.game_state = "betting"
+        self.message = "Place your bet to start"
         self.show_info = False
         self.show_bankroll_edit = False
 
@@ -57,12 +75,26 @@ class BlackjackGame:
         start_x = (SCREEN_WIDTH - (4 * button_width + 3 * spacing)) // 2
 
         self.hit_btn = Button(start_x, button_y, button_width, button_height, "HIT", BLUE)
-        self.stand_btn = Button(start_x + button_width + spacing, button_y,
-                                button_width, button_height, "STAND", RED)
-        self.double_btn = Button(start_x + 2 * (button_width + spacing), button_y,
-                                 button_width, button_height, "DOUBLE", GOLD, BLACK)
-        self.split_btn = Button(start_x + 3 * (button_width + spacing), button_y,
-                                button_width, button_height, "SPLIT", (128, 0, 128))
+        self.stand_btn = Button(
+            start_x + button_width + spacing, button_y, button_width, button_height, "STAND", RED
+        )
+        self.double_btn = Button(
+            start_x + 2 * (button_width + spacing),
+            button_y,
+            button_width,
+            button_height,
+            "DOUBLE",
+            GOLD,
+            BLACK,
+        )
+        self.split_btn = Button(
+            start_x + 3 * (button_width + spacing),
+            button_y,
+            button_width,
+            button_height,
+            "SPLIT",
+            (128, 0, 128),
+        )
 
         # Deal and new hand buttons
         self.deal_btn = Button(SCREEN_WIDTH // 2 - 100, 700, 200, 60, "DEAL CARDS", (0, 150, 0))
@@ -78,27 +110,38 @@ class BlackjackGame:
             Button(bet_start_x, bet_y, bet_width, bet_height, "$10", (70, 70, 70)),
             Button(bet_start_x + 90, bet_y, bet_width, bet_height, "$20", (70, 70, 70)),
             Button(bet_start_x + 180, bet_y, bet_width, bet_height, "$50", (70, 70, 70)),
-            Button(bet_start_x + 270, bet_y, bet_width, bet_height, "$100", (70, 70, 70))
+            Button(bet_start_x + 270, bet_y, bet_width, bet_height, "$100", (70, 70, 70)),
         ]
 
         # Custom bet input
-        self.custom_bet_input = TextInput(bet_start_x + 370, bet_y, 120, 40,
-                                          "Custom Bet:", "", max_length=6)
+        self.custom_bet_input = TextInput(
+            bet_start_x + 370, bet_y, 120, 40, "Custom Bet:", "", max_length=6
+        )
 
         # Deck count input
-        self.deck_input = TextInput(SCREEN_WIDTH - 250, bet_y, 120, 40,
-                                     "Decks (1-8):", str(self.num_decks), max_length=1)
+        self.deck_input = TextInput(
+            SCREEN_WIDTH - 250, bet_y, 120, 40, "Decks (1-8):", str(self.num_decks), max_length=1
+        )
 
         # Bankroll edit button
         self.edit_bankroll_btn = Button(90, 130, 100, 30, "Edit $", (200, 100, 0), WHITE)
 
         # Bankroll modal components
-        self.bankroll_input = TextInput(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 50,
-                                        200, 50, "", str(self.bankroll), max_length=8)
-        self.confirm_bankroll_btn = Button(SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 20,
-                                           80, 40, "OK", (0, 150, 0))
-        self.cancel_bankroll_btn = Button(SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20,
-                                          80, 40, "Cancel", (150, 0, 0))
+        self.bankroll_input = TextInput(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT // 2 - 50,
+            200,
+            50,
+            "",
+            str(self.bankroll),
+            max_length=8,
+        )
+        self.confirm_bankroll_btn = Button(
+            SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 20, 80, 40, "OK", (0, 150, 0)
+        )
+        self.cancel_bankroll_btn = Button(
+            SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20, 80, 40, "Cancel", (150, 0, 0)
+        )
 
         # Info and shoe buttons
         self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
@@ -151,10 +194,10 @@ class BlackjackGame:
                 blackjack_winnings = int(self.current_bet * 1.5)
                 self.bankroll += blackjack_winnings
                 self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
-            self.game_state = 'finished'
+            self.game_state = "finished"
         else:
-            self.game_state = 'playing'
-            self.message = 'Make your move'
+            self.game_state = "playing"
+            self.message = "Make your move"
 
     def hit(self):
         """Player hits (takes another card)."""
@@ -170,7 +213,7 @@ class BlackjackGame:
                     self.active_split_hand = 1
                     self.message = "Hand 1 busted. Playing hand 2"
                 else:
-                    self.game_state = 'dealer'
+                    self.game_state = "dealer"
                     self.dealer_play()
         else:
             card = self.deck.pop(0)
@@ -181,7 +224,7 @@ class BlackjackGame:
             if calculate_hand_value(self.player_hand) > 21:
                 self.message = "Bust! Dealer wins"
                 self.bankroll -= self.current_bet
-                self.game_state = 'finished'
+                self.game_state = "finished"
 
     def stand(self):
         """Player stands (ends turn)."""
@@ -189,7 +232,7 @@ class BlackjackGame:
             self.active_split_hand = 1
             self.message = "Playing hand 2"
         else:
-            self.game_state = 'dealer'
+            self.game_state = "dealer"
             self.dealer_play()
 
     def double_down(self):
@@ -215,7 +258,7 @@ class BlackjackGame:
                 self.active_split_hand = 1
                 self.message = "Playing hand 2"
             else:
-                self.game_state = 'dealer'
+                self.game_state = "dealer"
                 self.dealer_play()
         else:
             card = self.deck.pop(0)
@@ -226,9 +269,9 @@ class BlackjackGame:
             if calculate_hand_value(self.player_hand) > 21:
                 self.message = "Bust! Dealer wins"
                 self.bankroll -= self.current_bet
-                self.game_state = 'finished'
+                self.game_state = "finished"
             else:
-                self.game_state = 'dealer'
+                self.game_state = "dealer"
                 self.dealer_play()
 
     def split(self):
@@ -292,7 +335,9 @@ class BlackjackGame:
                     results.append(f"Hand {i+1}: Push")
 
             self.bankroll += total_win
-            self.message = " | ".join(results) + f" | Net: {'+' if total_win >= 0 else ''}${total_win}"
+            self.message = (
+                " | ".join(results) + f" | Net: {'+' if total_win >= 0 else ''}${total_win}"
+            )
         else:
             player_value = calculate_hand_value(self.player_hand)
 
@@ -308,7 +353,7 @@ class BlackjackGame:
             else:
                 self.message = f"Push! Both have {player_value}"
 
-        self.game_state = 'finished'
+        self.game_state = "finished"
 
     def start_new_hand(self):
         """Start a new hand."""
@@ -321,8 +366,8 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
-        self.game_state = 'betting'
-        self.message = 'Place your bet to start'
+        self.game_state = "betting"
+        self.message = "Place your bet to start"
 
     def draw_card(self, screen: pygame.Surface, card: Card, x: int, y: int, hidden: bool = False):
         """Draw a card on the screen."""
@@ -334,7 +379,7 @@ class BlackjackGame:
         pygame.draw.rect(screen, BLACK, (x, y, CARD_WIDTH, CARD_HEIGHT), 2, border_radius=5)
 
         if not hidden:
-            color = RED if card.suit in ['♥', '♦'] else BLACK
+            color = RED if card.suit in ["♥", "♦"] else BLACK
 
             rank_text = CARD_FONT.render(card.rank, True, color)
             screen.blit(rank_text, (x + 10, y + 10))
@@ -346,13 +391,12 @@ class BlackjackGame:
                 else:
                     raise ValueError("Symbol not supported")
             except Exception:
-                suit_names = {'♠': 'S', '♥': 'H', '♦': 'D', '♣': 'C'}
-                fallback_text = SMALL_FONT.render(
-                    suit_names.get(card.suit, '?'), True, color)
+                suit_names = {"♠": "S", "♥": "H", "♦": "D", "♣": "C"}
+                fallback_text = SMALL_FONT.render(suit_names.get(card.suit, "?"), True, color)
                 screen.blit(fallback_text, (x + 10, y + 55))
         else:
-            question = LARGE_FONT.render('?', True, WHITE)
-            q_rect = question.get_rect(center=(x + CARD_WIDTH//2, y + CARD_HEIGHT//2))
+            question = LARGE_FONT.render("?", True, WHITE)
+            q_rect = question.get_rect(center=(x + CARD_WIDTH // 2, y + CARD_HEIGHT // 2))
             screen.blit(question, q_rect)
 
     def draw_bankroll_modal(self):
@@ -367,10 +411,12 @@ class BlackjackGame:
         box_x = (SCREEN_WIDTH - box_width) // 2
         box_y = (SCREEN_HEIGHT - box_height) // 2
 
-        pygame.draw.rect(self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height),
-                        border_radius=10)
-        pygame.draw.rect(self.screen, GOLD, (box_x, box_y, box_width, box_height), 3,
-                        border_radius=10)
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
 
         title = MEDIUM_FONT.render("Set Bankroll", True, GOLD)
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, box_y + 30))
@@ -403,10 +449,12 @@ class BlackjackGame:
         box_x = (SCREEN_WIDTH - box_width) // 2
         box_y = (SCREEN_HEIGHT - box_height) // 2
 
-        pygame.draw.rect(self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height),
-                        border_radius=10)
-        pygame.draw.rect(self.screen, GOLD, (box_x, box_y, box_width, box_height), 3,
-                        border_radius=10)
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
 
         title = LARGE_FONT.render("Blackjack Card Counting Guide", True, GOLD)
         self.screen.blit(title, (box_x + 20, box_y + 20))
@@ -458,7 +506,7 @@ class BlackjackGame:
             f"Running Count: {'+' if self.running_count > 0 else ''}{self.running_count}",
             f"True Count: {'+' if true_count > 0 else ''}{true_count}",
             f"Cards: {self.cards_dealt}/{self.num_decks * 52}",
-            f"Bet: ${self.current_bet}"
+            f"Bet: ${self.current_bet}",
         ]
 
         stat_width = SCREEN_WIDTH // len(stats)
@@ -471,7 +519,7 @@ class BlackjackGame:
         self.edit_bankroll_btn.draw(self.screen)
 
         # Betting advice
-        if self.game_state == 'betting':
+        if self.game_state == "betting":
             units, advice = get_betting_advice(true_count)
             advice_text = f"Recommended: {units} units (${units * 10}) - {advice}"
             advice_surf = TINY_FONT.render(advice_text, True, YELLOW)
@@ -485,13 +533,13 @@ class BlackjackGame:
 
         if self.dealer_hand:
             dealer_value = calculate_hand_value(self.dealer_hand)
-            value_text = "?" if self.game_state == 'playing' else str(dealer_value)
+            value_text = "?" if self.game_state == "playing" else str(dealer_value)
             value_surf = MEDIUM_FONT.render(f"({value_text})", True, WHITE)
             self.screen.blit(value_surf, (200, dealer_y))
 
             card_x = 50
             for i, card in enumerate(self.dealer_hand):
-                hidden = i == 1 and self.game_state == 'playing'
+                hidden = i == 1 and self.game_state == "playing"
                 self.draw_card(self.screen, card, card_x, dealer_y + 40, hidden)
                 card_x += CARD_WIDTH + 10
 
@@ -507,9 +555,10 @@ class BlackjackGame:
 
                 hand_y = player_y + hand_idx * 120
 
-                if hand_idx == self.active_split_hand and self.game_state == 'playing':
-                    pygame.draw.rect(self.screen, YELLOW, (40, hand_y - 10, 600, 140), 3,
-                                   border_radius=5)
+                if hand_idx == self.active_split_hand and self.game_state == "playing":
+                    pygame.draw.rect(
+                        self.screen, YELLOW, (40, hand_y - 10, 600, 140), 3, border_radius=5
+                    )
 
                 label = SMALL_FONT.render(f"Hand {hand_idx + 1} ({value})", True, WHITE)
                 self.screen.blit(label, (50, hand_y + 30))
@@ -534,9 +583,8 @@ class BlackjackGame:
         self.screen.blit(message_surf, message_rect)
 
         # Strategy advice
-        if self.game_state == 'playing':
-            hand = (self.split_hands[self.active_split_hand]
-                   if self.is_split else self.player_hand)
+        if self.game_state == "playing":
+            hand = self.split_hands[self.active_split_hand] if self.is_split else self.player_hand
             strategy = get_basic_strategy(hand, self.dealer_hand, self.is_split)
             if strategy:
                 strategy_text = f"Recommended: {strategy}"
@@ -547,14 +595,15 @@ class BlackjackGame:
                 box_x = (SCREEN_WIDTH - box_width) // 2
                 box_y = 660
 
-                pygame.draw.rect(self.screen, YELLOW, (box_x, box_y, box_width, box_height),
-                               border_radius=8)
+                pygame.draw.rect(
+                    self.screen, YELLOW, (box_x, box_y, box_width, box_height), border_radius=8
+                )
 
                 text_rect = strategy_surf.get_rect(center=(SCREEN_WIDTH // 2, box_y + 25))
                 self.screen.blit(strategy_surf, text_rect)
 
         # Buttons
-        if self.game_state == 'betting':
+        if self.game_state == "betting":
             self.deal_btn.draw(self.screen)
             for btn in self.bet_buttons:
                 btn.draw(self.screen)
@@ -562,16 +611,16 @@ class BlackjackGame:
             self.custom_bet_input.draw(self.screen)
             self.deck_input.draw(self.screen)
 
-        elif self.game_state == 'playing':
-            can_split = (len(self.player_hand) == 2 and
-                        self.player_hand[0].rank == self.player_hand[1].rank and
-                        not self.is_split and
-                        self.current_bet * 2 <= self.bankroll)
+        elif self.game_state == "playing":
+            can_split = (
+                len(self.player_hand) == 2
+                and self.player_hand[0].rank == self.player_hand[1].rank
+                and not self.is_split
+                and self.current_bet * 2 <= self.bankroll
+            )
 
-            hand = (self.split_hands[self.active_split_hand]
-                   if self.is_split else self.player_hand)
-            can_double = (len(hand) == 2 and
-                         self.current_bet * 2 <= self.bankroll)
+            hand = self.split_hands[self.active_split_hand] if self.is_split else self.player_hand
+            can_double = len(hand) == 2 and self.current_bet * 2 <= self.bankroll
 
             self.hit_btn.enabled = True
             self.stand_btn.enabled = True
@@ -583,7 +632,7 @@ class BlackjackGame:
             self.double_btn.draw(self.screen)
             self.split_btn.draw(self.screen)
 
-        elif self.game_state == 'finished':
+        elif self.game_state == "finished":
             self.new_hand_btn.draw(self.screen)
 
         # Always visible buttons
@@ -652,7 +701,7 @@ class BlackjackGame:
                 continue
 
             # Game state specific handling
-            if self.game_state == 'betting':
+            if self.game_state == "betting":
                 # Handle deck input
                 if self.deck_input.handle_event(event):
                     deck_count = self.deck_input.get_value()
@@ -682,7 +731,7 @@ class BlackjackGame:
                         self.current_bet = [10, 20, 50, 100][i]
                         self.custom_bet_input.text = ""
 
-            elif self.game_state == 'playing':
+            elif self.game_state == "playing":
                 if self.hit_btn.handle_event(event):
                     self.hit()
                 elif self.stand_btn.handle_event(event):
@@ -692,7 +741,7 @@ class BlackjackGame:
                 elif self.split_btn.handle_event(event):
                     self.split()
 
-            elif self.game_state == 'finished':
+            elif self.game_state == "finished":
                 if self.new_hand_btn.handle_event(event):
                     self.start_new_hand()
 
