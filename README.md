@@ -342,10 +342,10 @@ def test_soft_hand():
 
 ## 📚 Documentation
 
-- **[SETUP_COMPLETE.md](SETUP_COMPLETE.md)** - Complete Poetry setup guide
-- **[POETRY_GUIDE.md](POETRY_GUIDE.md)** - Poetry commands reference
-- **[MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md)** - Architecture documentation
-- **[PROJECT_TREE.txt](PROJECT_TREE.txt)** - Project structure overview
+- **[Poetry Guide](docs/POETRY_GUIDE.md)** - Complete guide for building, packaging, and distribution
+- **[Architecture](docs/ARCHITECTURE.md)** - Module architecture and design patterns
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Changelog](CHANGELOG.md)** - Version history and changes
 
 ## 🤝 Contributing
 
