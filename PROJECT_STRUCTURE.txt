@@ -1,0 +1,55 @@
+blackjack-card-counter/
+│
+├── blackjack_card_counter/     # Main package
+│   ├── __init__.py             # Package entry point
+│   ├── __main__.py             # Module runner
+│   ├── constants.py            # Configuration
+│   ├── card.py                 # Card logic
+│   ├── ui.py                   # UI components
+│   ├── strategy.py             # Strategy calculations
+│   └── game.py                 # Game orchestrator
+│
+├── docs/                       # Documentation
+│   ├── POETRY_GUIDE.md         # Build & packaging guide
+│   ├── ARCHITECTURE.md         # Module architecture
+│   └── CONTRIBUTING.md         # Contribution guidelines
+│
+├── examples/                   # Example scripts
+│   ├── README.md               # Examples documentation
+│   └── standalone_game.py      # Original standalone version
+│
+├── tests/                      # Test suite
+│   └── __init__.py             # Tests package
+│
+├── dist/                       # Built distributions (gitignored)
+│   ├── *.whl                   # Wheel files
+│   └── *.tar.gz                # Source distributions
+│
+├── README.md                   # Project overview
+├── LICENSE                     # MIT License
+├── CHANGELOG.md                # Version history
+├── pyproject.toml              # Poetry configuration
+├── poetry.lock                 # Locked dependencies
+├── requirements.txt            # Pip compatibility
+├── .gitignore                  # Git ignore rules
+└── game.py                     # Legacy standalone (for backward compatibility)
+
+Package Statistics:
+-------------------
+Total Python files:    7 modules
+Total lines of code:   1,081
+Average module size:   154 lines
+Documentation files:   3 comprehensive guides
+
+Professional Features:
+----------------------
+✅ Modular architecture
+✅ Comprehensive documentation
+✅ Development tools included
+✅ Tests directory ready
+✅ Examples provided
+✅ Contributing guidelines
+✅ Clean git ignore
+✅ Proper package structure
+✅ Changelog maintained
+✅ MIT licensed
