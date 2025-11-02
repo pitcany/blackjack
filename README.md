@@ -349,12 +349,26 @@ def test_soft_hand():
 
 ## 🤝 Contributing
 
-Contributions are welcome! The modular architecture makes it easy to:
+We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
-1. Add new features (create new modules)
-2. Fix bugs (isolated components)
-3. Improve strategy (edit `strategy.py`)
-4. Enhance UI (modify `ui.py`)
+### Quick Start for Contributors
+
+```bash
+# Fork and clone
+git clone https://github.com/YOUR_USERNAME/blackjack.git
+cd blackjack
+
+# Install with dev dependencies
+poetry install --extras dev
+
+# Make changes and test
+poetry run black .
+poetry run pytest
+poetry run blackjack
+
+# Submit PR
+git push origin feature/your-feature
+```
 
 ## 📄 License
 
