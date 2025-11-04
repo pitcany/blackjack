@@ -389,9 +389,21 @@ class BlackjackGame:
             self.game_state = 'dealer'
             self.dealer_play()
 
+    def _calculate_split_double_exposure(self):
+        """Calculate total bankroll exposure if doubling a split hand.
+
+        Returns:
+            Total exposure (other hand's bet + this hand's doubled bet)
+        """
+        other_hand_idx = 1 - self.active_split_hand
+        other_hand_bet = self.current_bet * 2 if self.split_doubled[other_hand_idx] else self.current_bet
+        this_hand_doubled_bet = self.current_bet * 2
+        return other_hand_bet + this_hand_doubled_bet
+
     def double_down(self):
         if self.is_split:
-            if self.current_bet * 2 > self.bankroll:
+            total_exposure = self._calculate_split_double_exposure()
+            if total_exposure > self.bankroll:
                 self.message = "Insufficient funds to double!"
                 return
             self.split_doubled[self.active_split_hand] = True
@@ -750,8 +762,13 @@ class BlackjackGame:
 
             hand = (self.split_hands[self.active_split_hand]
                     if self.is_split else self.player_hand)
-            can_double = (len(hand) == 2 and
-                          self.current_bet * 2 <= self.bankroll)
+
+            # Calculate if player can afford to double
+            if self.is_split:
+                total_exposure = self._calculate_split_double_exposure()
+                can_double = len(hand) == 2 and total_exposure <= self.bankroll
+            else:
+                can_double = len(hand) == 2 and self.current_bet * 2 <= self.bankroll
 
             self.hit_btn.enabled = True
             self.stand_btn.enabled = True
