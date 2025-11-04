@@ -1,4 +1,5 @@
 """UI components for the Blackjack game."""
+
 import pygame
 from typing import Tuple
 
@@ -8,8 +9,16 @@ from .constants import WHITE, GRAY, LIGHT_GRAY, SMALL_FONT, TINY_FONT
 class TextInput:
     """Text input field for user input."""
 
-    def __init__(self, x: int, y: int, width: int, height: int,
-                 label: str = "", default_text: str = "", max_length: int = 10):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        label: str = "",
+        default_text: str = "",
+        max_length: int = 10,
+    ):
         self.rect = pygame.Rect(x, y, width, height)
         self.label = label
         self.text = default_text
@@ -73,9 +82,16 @@ class TextInput:
 class Button:
     """Clickable button."""
 
-    def __init__(self, x: int, y: int, width: int, height: int,
-                 text: str, color: Tuple[int, int, int],
-                 text_color: Tuple[int, int, int] = WHITE):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        text: str,
+        color: Tuple[int, int, int],
+        text_color: Tuple[int, int, int] = WHITE,
+    ):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.color = color
@@ -93,9 +109,7 @@ class Button:
         pygame.draw.rect(screen, WHITE, self.rect, 2, border_radius=10)
 
         text_surf = SMALL_FONT.render(
-            self.text,
-            True,
-            self.text_color if self.enabled else LIGHT_GRAY
+            self.text, True, self.text_color if self.enabled else LIGHT_GRAY
         )
         text_rect = text_surf.get_rect(center=self.rect.center)
         screen.blit(text_surf, text_rect)

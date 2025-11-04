@@ -270,7 +270,14 @@ class BlackjackGame:
 
         is_pair = len(hand) == 2 and hand[0].rank == hand[1].rank and not self.is_split
         has_ace = any(card.rank == 'A' for card in hand)
-        is_soft = has_ace and player_value <= 21
+
+        # A hand is soft only if an ace is being counted as 11 (not just present)
+        # Calculate sum treating all aces as 1, if adding 10 equals player_value, ace is counted as 11
+        sum_aces_as_one = sum(
+            1 if card.rank == 'A' else (10 if card.rank in ['J', 'Q', 'K'] else int(card.rank))
+            for card in hand
+        )
+        is_soft = has_ace and player_value <= 21 and (sum_aces_as_one + 10) == player_value
 
         if is_pair:
             rank = hand[0].rank
@@ -389,9 +396,21 @@ class BlackjackGame:
             self.game_state = 'dealer'
             self.dealer_play()
 
+    def _calculate_split_double_exposure(self):
+        """Calculate total bankroll exposure if doubling a split hand.
+
+        Returns:
+            Total exposure (other hand's bet + this hand's doubled bet)
+        """
+        other_hand_idx = 1 - self.active_split_hand
+        other_hand_bet = self.current_bet * 2 if self.split_doubled[other_hand_idx] else self.current_bet
+        this_hand_doubled_bet = self.current_bet * 2
+        return other_hand_bet + this_hand_doubled_bet
+
     def double_down(self):
         if self.is_split:
-            if self.current_bet * 2 > self.bankroll:
+            total_exposure = self._calculate_split_double_exposure()
+            if total_exposure > self.bankroll:
                 self.message = "Insufficient funds to double!"
                 return
             self.split_doubled[self.active_split_hand] = True
@@ -750,8 +769,13 @@ class BlackjackGame:
 
             hand = (self.split_hands[self.active_split_hand]
                     if self.is_split else self.player_hand)
-            can_double = (len(hand) == 2 and
-                          self.current_bet * 2 <= self.bankroll)
+
+            # Calculate if player can afford to double
+            if self.is_split:
+                total_exposure = self._calculate_split_double_exposure()
+                can_double = len(hand) == 2 and total_exposure <= self.bankroll
+            else:
+                can_double = len(hand) == 2 and self.current_bet * 2 <= self.bankroll
 
             self.hit_btn.enabled = True
             self.stand_btn.enabled = True
@@ -828,12 +852,8 @@ class BlackjackGame:
 
             # Game state specific handling
             if self.game_state == 'betting':
-                # Handle deck input
-                if self.deck_input.handle_event(event):
-                    deck_count = self.deck_input.get_value()
-                    if 1 <= deck_count <= 8:
-                        self.num_decks = deck_count
-                        self.initialize_deck()
+                # Handle deck input (no action on Enter - live updates below)
+                self.deck_input.handle_event(event)
 
                 # Handle custom bet input
                 self.custom_bet_input.handle_event(event)

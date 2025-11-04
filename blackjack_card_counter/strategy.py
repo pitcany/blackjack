@@ -1,4 +1,5 @@
 """Strategy calculations for blackjack."""
+
 from typing import List, Tuple
 
 from .card import Card, calculate_hand_value
@@ -42,8 +43,9 @@ def get_betting_advice(true_count: int) -> Tuple[int, str]:
         return 8, "Excellent advantage - maximum bet"
 
 
-def get_basic_strategy(player_hand: List[Card], dealer_hand: List[Card],
-                       is_split: bool = False) -> str:
+def get_basic_strategy(
+    player_hand: List[Card], dealer_hand: List[Card], is_split: bool = False
+) -> str:
     """Get basic strategy recommendation.
 
     Args:
@@ -55,57 +57,66 @@ def get_basic_strategy(player_hand: List[Card], dealer_hand: List[Card],
         Recommended action: 'HIT', 'STAND', 'DOUBLE', or 'SPLIT'
     """
     if not player_hand or not dealer_hand:
-        return 'HIT'
+        return "HIT"
 
     dealer_card = dealer_hand[0]
-    dealer_value = 11 if dealer_card.rank == 'A' else (
-        10 if dealer_card.rank in ['J', 'Q', 'K'] else int(dealer_card.rank)
+    dealer_value = (
+        11
+        if dealer_card.rank == "A"
+        else (10 if dealer_card.rank in ["J", "Q", "K"] else int(dealer_card.rank))
     )
     player_value = calculate_hand_value(player_hand)
 
     # Check for pairs (only if not already split)
     is_pair = len(player_hand) == 2 and player_hand[0].rank == player_hand[1].rank and not is_split
-    has_ace = any(card.rank == 'A' for card in player_hand)
-    is_soft = has_ace and player_value <= 21
+    has_ace = any(card.rank == "A" for card in player_hand)
+
+    # A hand is soft only if an ace is being counted as 11 (not just present)
+    # Calculate sum treating all aces as 1, if adding 10 equals player_value, ace is counted as 11
+    sum_aces_as_one = sum(
+        1 if card.rank == "A" else (10 if card.rank in ["J", "Q", "K"] else int(card.rank))
+        for card in player_hand
+    )
+    is_soft = has_ace and player_value <= 21 and (sum_aces_as_one + 10) == player_value
 
     # Pair splitting strategy
     if is_pair:
         rank = player_hand[0].rank
-        if rank in ['A', '8']:
-            return 'SPLIT'
-        if rank in ['2', '3', '7'] and dealer_value <= 7:
-            return 'SPLIT'
-        if rank == '6' and dealer_value <= 6:
-            return 'SPLIT'
-        if rank == '9' and dealer_value <= 9 and dealer_value != 7:
-            return 'SPLIT'
-        if rank in ['10', 'J', 'Q', 'K']:
-            return 'STAND'
+        if rank in ["A", "8"]:
+            return "SPLIT"
+        if rank in ["2", "3", "7"] and dealer_value <= 7:
+            return "SPLIT"
+        if rank == "6" and dealer_value <= 6:
+            return "SPLIT"
+        if rank == "9" and dealer_value <= 9 and dealer_value != 7:
+            return "SPLIT"
+        if rank in ["10", "J", "Q", "K"]:
+            return "STAND"
 
     # Soft hand strategy
     if is_soft and player_value <= 21:
         if player_value >= 19:
-            return 'STAND'
+            return "STAND"
         if player_value == 18 and dealer_value >= 9:
-            return 'HIT'
+            return "HIT"
         if player_value == 18 and dealer_value <= 6:
-            return 'DOUBLE' if len(player_hand) == 2 else 'HIT'
+            return "DOUBLE" if len(player_hand) == 2 else "HIT"
         if player_value == 18:
-            return 'STAND'
-        return 'HIT'
+            return "STAND"
+        return "HIT"
 
     # Hard hand strategy
     if player_value >= 17:
-        return 'STAND'
+        return "STAND"
     if player_value >= 13:
-        return 'STAND' if dealer_value <= 6 else 'HIT'
+        return "STAND" if dealer_value <= 6 else "HIT"
     if player_value == 12:
-        return 'STAND' if 4 <= dealer_value <= 6 else 'HIT'
+        return "STAND" if 4 <= dealer_value <= 6 else "HIT"
     if player_value == 11:
-        return 'DOUBLE' if len(player_hand) == 2 else 'HIT'
+        return "DOUBLE" if len(player_hand) == 2 else "HIT"
     if player_value == 10:
-        return 'DOUBLE' if len(player_hand) == 2 and dealer_value <= 9 else 'HIT'
+        return "DOUBLE" if len(player_hand) == 2 and dealer_value <= 9 else "HIT"
     if player_value == 9:
-        return 'DOUBLE' if len(player_hand) == 2 and 3 <= dealer_value <= 6 else 'HIT'
+        return "DOUBLE" if len(player_hand) == 2 and 3 <= dealer_value <= 6 else "HIT"
 
-    return 'HIT'
+    return "HIT"
