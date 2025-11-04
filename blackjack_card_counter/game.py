@@ -720,12 +720,8 @@ class BlackjackGame:
 
             # Game state specific handling
             if self.game_state == "betting":
-                # Handle deck input
-                if self.deck_input.handle_event(event):
-                    deck_count = self.deck_input.get_value()
-                    if 1 <= deck_count <= 8:
-                        self.num_decks = deck_count
-                        self.initialize_deck()
+                # Handle deck input (no action on Enter - live updates below)
+                self.deck_input.handle_event(event)
 
                 # Handle custom bet input
                 self.custom_bet_input.handle_event(event)
