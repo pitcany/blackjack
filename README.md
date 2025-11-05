@@ -30,6 +30,33 @@ blackjack_card_counter/
 
 See [MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md) for detailed architecture documentation.
 
+## 🚀 Quick Start
+
+### Install and Run
+```bash
+# Using Poetry (recommended)
+poetry install
+poetry run blackjack
+
+# Using pip (from built wheel)
+pip install dist/blackjack_card_counter-0.1.0-py3-none-any.whl
+blackjack
+```
+
+### Build from Source
+```bash
+# Clone repository
+git clone https://github.com/pitcany/blackjack.git
+cd blackjack
+
+# Build wheel
+poetry build
+
+# Install and run
+pip install dist/blackjack_card_counter-*.whl
+blackjack
+```
+
 ## 📦 Installation
 
 ### Option 1: Using Poetry (Recommended)
@@ -202,13 +229,100 @@ blackjack/
 
 ### Building
 
+#### Quick Build
 ```bash
-# Build distributions (wheel and source)
+# Build both wheel and source distribution
 poetry build
+```
 
-# Output:
-# dist/blackjack_card_counter-0.1.0-py3-none-any.whl
-# dist/blackjack_card_counter-0.1.0.tar.gz
+**Output:**
+```
+dist/
+├── blackjack_card_counter-0.1.0-py3-none-any.whl  # Wheel (fast install)
+└── blackjack_card_counter-0.1.0.tar.gz            # Source distribution
+```
+
+#### Build Workflows
+
+**Standard Build:**
+```bash
+# 1. Install dependencies
+poetry install
+
+# 2. Verify configuration
+poetry check
+
+# 3. Build packages
+poetry build
+```
+
+**Clean Build:**
+```bash
+# Remove old builds
+rm -rf dist/
+
+# Build fresh
+poetry build
+```
+
+**Build Specific Format:**
+```bash
+# Build only wheel
+poetry build --format wheel
+
+# Build only source distribution
+poetry build --format sdist
+```
+
+**Version Bump & Build:**
+```bash
+# Bump version (patch: 0.1.0 → 0.1.1)
+poetry version patch
+
+# Build with new version
+poetry build
+```
+
+#### Pre-Build Checklist
+```bash
+# Format code
+poetry run black blackjack_card_counter/
+
+# Sort imports
+poetry run isort blackjack_card_counter/
+
+# Lint
+poetry run flake8 blackjack_card_counter/
+
+# Verify config
+poetry check
+
+# Build
+poetry build
+```
+
+#### Verify Build
+```bash
+# Check built files
+ls -lh dist/
+
+# Inspect wheel contents
+unzip -l dist/blackjack_card_counter-*.whl
+
+# Test installation
+pip install dist/blackjack_card_counter-*.whl
+blackjack
+```
+
+#### Distribute
+```bash
+# Share wheel file
+cp dist/blackjack_card_counter-*.whl ~/Downloads/
+
+# Or create archive
+zip -r blackjack-dist.zip dist/
+
+# Upload to GitHub releases or share directly
 ```
 
 ### Testing
@@ -228,19 +342,33 @@ def test_soft_hand():
 
 ## 📚 Documentation
 
-- **[SETUP_COMPLETE.md](SETUP_COMPLETE.md)** - Complete Poetry setup guide
-- **[POETRY_GUIDE.md](POETRY_GUIDE.md)** - Poetry commands reference
-- **[MODULAR_ARCHITECTURE.md](MODULAR_ARCHITECTURE.md)** - Architecture documentation
-- **[PROJECT_TREE.txt](PROJECT_TREE.txt)** - Project structure overview
+- **[Poetry Guide](docs/POETRY_GUIDE.md)** - Complete guide for building, packaging, and distribution
+- **[Architecture](docs/ARCHITECTURE.md)** - Module architecture and design patterns
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Changelog](CHANGELOG.md)** - Version history and changes
 
 ## 🤝 Contributing
 
-Contributions are welcome! The modular architecture makes it easy to:
+We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
-1. Add new features (create new modules)
-2. Fix bugs (isolated components)
-3. Improve strategy (edit `strategy.py`)
-4. Enhance UI (modify `ui.py`)
+### Quick Start for Contributors
+
+```bash
+# Fork and clone
+git clone https://github.com/YOUR_USERNAME/blackjack.git
+cd blackjack
+
+# Install with dev dependencies
+poetry install --extras dev
+
+# Make changes and test
+poetry run black .
+poetry run pytest
+poetry run blackjack
+
+# Submit PR
+git push origin feature/your-feature
+```
 
 ## 📄 License
 

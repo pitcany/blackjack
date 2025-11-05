@@ -70,7 +70,14 @@ def get_basic_strategy(
     # Check for pairs (only if not already split)
     is_pair = len(player_hand) == 2 and player_hand[0].rank == player_hand[1].rank and not is_split
     has_ace = any(card.rank == "A" for card in player_hand)
-    is_soft = has_ace and player_value <= 21
+
+    # A hand is soft only if an ace is being counted as 11 (not just present)
+    # Calculate sum treating all aces as 1, if adding 10 equals player_value, ace is counted as 11
+    sum_aces_as_one = sum(
+        1 if card.rank == "A" else (10 if card.rank in ["J", "Q", "K"] else int(card.rank))
+        for card in player_hand
+    )
+    is_soft = has_ace and player_value <= 21 and (sum_aces_as_one + 10) == player_value
 
     # Pair splitting strategy
     if is_pair:
