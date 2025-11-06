@@ -1019,5 +1019,7 @@ class BlackjackGame:
             pygame.display.flip()
             self.clock.tick(FPS)
 
+        # Save statistics before exiting
+        self.stats.save_stats()
         pygame.quit()
         sys.exit()
