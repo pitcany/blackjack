@@ -896,8 +896,13 @@ class BlackjackGame:
                         self.show_info = False
                     elif self.show_bankroll_edit:
                         self.show_bankroll_edit = False
+                    elif self.show_stats:
+                        self.show_stats = False
                     else:
                         return False
+                elif event.key == pygame.K_SPACE and self.game_state == "insurance":
+                    # Decline insurance with spacebar
+                    self.decline_insurance()
 
             # Bankroll modal has highest priority
             if self.show_bankroll_edit:
