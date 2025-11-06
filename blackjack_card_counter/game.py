@@ -340,6 +340,79 @@ class BlackjackGame:
         self.active_split_hand = 0
         self.message = "Playing hand 1"
 
+    def take_insurance(self):
+        """Player takes insurance bet."""
+        insurance_cost = self.current_bet // 2
+        if insurance_cost > self.bankroll:
+            self.message = "Insufficient funds for insurance!"
+            return
+
+        self.insurance_bet = insurance_cost
+        self.check_dealer_blackjack()
+
+    def decline_insurance(self):
+        """Player declines insurance."""
+        self.insurance_bet = 0
+        self.check_dealer_blackjack()
+
+    def check_dealer_blackjack(self):
+        """Check if dealer has blackjack after insurance decision."""
+        dealer_value = calculate_hand_value(self.dealer_hand)
+        self.running_count += self.dealer_hand[1].get_count_value()
+        
+        if dealer_value == 21:
+            # Dealer has blackjack
+            player_value = calculate_hand_value(self.player_hand)
+            
+            if self.insurance_bet > 0:
+                # Insurance pays 2:1
+                insurance_payout = self.insurance_bet * 2
+                self.bankroll += insurance_payout
+                self.message = f"Dealer has blackjack! Insurance pays ${insurance_payout}"
+            else:
+                self.message = "Dealer has blackjack!"
+            
+            if player_value == 21:
+                # Player also has blackjack - push on main bet
+                self.message += " | Main bet pushes"
+                net_result = self.insurance_bet * 2 if self.insurance_bet > 0 else 0
+                self.stats.record_hand('push', self.current_bet, net_result)
+            else:
+                # Player loses main bet
+                self.bankroll -= self.current_bet
+                net_result = (self.insurance_bet * 2 - self.current_bet) if self.insurance_bet > 0 else -self.current_bet
+                if net_result >= 0:
+                    self.stats.record_hand('win', self.current_bet, net_result)
+                else:
+                    self.stats.record_hand('loss', self.current_bet, net_result)
+            
+            true_count = get_true_count(self.running_count, self.cards_dealt, self.num_decks)
+            self.stats.record_bankroll(self.bankroll, self.running_count, true_count)
+            self.game_state = "finished"
+        else:
+            # Dealer doesn't have blackjack
+            if self.insurance_bet > 0:
+                self.bankroll -= self.insurance_bet
+                self.message = f"No dealer blackjack. Lost ${self.insurance_bet} on insurance"
+            
+            # Check for player blackjack
+            player_value = calculate_hand_value(self.player_hand)
+            if player_value == 21:
+                blackjack_winnings = int(self.current_bet * 1.5)
+                self.bankroll += blackjack_winnings
+                net_result = blackjack_winnings - self.insurance_bet
+                self.message = f"Blackjack! You win ${blackjack_winnings}"
+                if self.insurance_bet > 0:
+                    self.message += f" (Net: ${net_result} after insurance)"
+                self.stats.record_hand('win', self.current_bet, net_result, is_blackjack=True)
+                true_count = get_true_count(self.running_count, self.cards_dealt, self.num_decks)
+                self.stats.record_bankroll(self.bankroll, self.running_count, true_count)
+                self.game_state = "finished"
+            else:
+                self.game_state = "playing"
+                if self.insurance_bet == 0:
+                    self.message = "Make your move"
+
     def dealer_play(self):
         """Dealer plays their hand."""
         self.running_count += self.dealer_hand[1].get_count_value()
