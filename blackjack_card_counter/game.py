@@ -7,6 +7,7 @@ from typing import List
 from .card import Card, create_deck, calculate_hand_value
 from .ui import Button, TextInput
 from .strategy import get_true_count, get_betting_advice, get_basic_strategy
+from .statistics import SessionStats
 from .constants import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
