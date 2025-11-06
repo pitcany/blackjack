@@ -10,20 +10,26 @@
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
     "package": "electron-builder"
   },
-  "keywords": ["blackjack", "card-counting", "electron", "react"],
+  "keywords": [
+    "blackjack",
+    "card-counting",
+    "electron",
+    "react"
+  ],
   "author": "pitcany",
   "license": "MIT",
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "axios": "^1.6.2",
-    "framer-motion": "^10.16.16"
+    "electron-is-dev": "^3.0.1",
+    "framer-motion": "^10.16.16",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "react-scripts": "5.0.1",
+    "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
-    "concurrently": "^8.2.2",
+    "react-scripts": "5.0.1",
     "wait-on": "^7.2.0"
   },
   "build": {
