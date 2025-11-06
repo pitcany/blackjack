@@ -920,6 +920,26 @@ class BlackjackGame:
 
                 continue
 
+            # Handle stats panel clicks
+            if self.show_stats:
+                if self.export_csv_btn.handle_event(event):
+                    filepath = self.stats.export_to_csv()
+                    if filepath:
+                        self.message = f"Stats exported to {filepath}"
+                    else:
+                        self.message = "Failed to export stats"
+                    continue
+
+                if self.reset_stats_btn.handle_event(event):
+                    self.stats.reset_session()
+                    self.starting_bankroll = self.bankroll
+                    self.message = "Statistics reset"
+                    continue
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.show_stats = False
+                    continue
+
             # Close info panel on click
             if event.type == pygame.MOUSEBUTTONDOWN and self.show_info:
                 self.show_info = False
@@ -933,6 +953,10 @@ class BlackjackGame:
 
             if self.info_btn.handle_event(event):
                 self.show_info = not self.show_info
+                continue
+
+            if self.stats_btn.handle_event(event):
+                self.show_stats = not self.show_stats
                 continue
 
             if self.new_shoe_btn.handle_event(event):
