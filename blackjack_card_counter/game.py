@@ -443,17 +443,22 @@ class BlackjackGame:
                 if hand_value > 21:
                     results.append(f"Hand {i+1}: Bust")
                     total_win -= hand_bet
+                    self.stats.record_hand('loss', hand_bet, -hand_bet)
                 elif dealer_value > 21:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    self.stats.record_hand('win', hand_bet, hand_bet)
                 elif hand_value > dealer_value:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    self.stats.record_hand('win', hand_bet, hand_bet)
                 elif hand_value < dealer_value:
                     results.append(f"Hand {i+1}: Loss")
                     total_win -= hand_bet
+                    self.stats.record_hand('loss', hand_bet, -hand_bet)
                 else:
                     results.append(f"Hand {i+1}: Push")
+                    self.stats.record_hand('push', hand_bet, 0)
 
             self.bankroll += total_win
             self.message = (
@@ -465,15 +470,21 @@ class BlackjackGame:
             if dealer_value > 21:
                 self.message = f"Dealer busts! You win with {player_value}!"
                 self.bankroll += self.current_bet
+                self.stats.record_hand('win', self.current_bet, self.current_bet)
             elif player_value > dealer_value:
                 self.message = f"You win! {player_value} beats {dealer_value}"
                 self.bankroll += self.current_bet
+                self.stats.record_hand('win', self.current_bet, self.current_bet)
             elif player_value < dealer_value:
                 self.message = f"Dealer wins. {dealer_value} beats {player_value}"
                 self.bankroll -= self.current_bet
+                self.stats.record_hand('loss', self.current_bet, -self.current_bet)
             else:
                 self.message = f"Push! Both have {player_value}"
+                self.stats.record_hand('push', self.current_bet, 0)
 
+        true_count = get_true_count(self.running_count, self.cards_dealt, self.num_decks)
+        self.stats.record_bankroll(self.bankroll, self.running_count, true_count)
         self.game_state = "finished"
 
     def start_new_hand(self):
