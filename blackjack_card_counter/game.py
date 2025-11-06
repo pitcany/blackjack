@@ -990,6 +990,10 @@ class BlackjackGame:
                         self.current_bet = [10, 20, 50, 100][i]
                         self.custom_bet_input.text = ""
 
+            elif self.game_state == "insurance":
+                if self.insurance_btn.handle_event(event):
+                    self.take_insurance()
+
             elif self.game_state == "playing":
                 if self.hit_btn.handle_event(event):
                     self.hit()
