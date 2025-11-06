@@ -183,6 +183,8 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.insurance_bet = 0
+        self.insurance_offered = False
 
         # Deal player cards
         for _ in range(2):
@@ -201,6 +203,17 @@ class BlackjackGame:
 
         player_value = calculate_hand_value(self.player_hand)
 
+        # Check if insurance should be offered
+        if self.dealer_hand[0].rank == "A":
+            self.insurance_offered = True
+            self.game_state = "insurance"
+            true_count = get_true_count(self.running_count, self.cards_dealt, self.num_decks)
+            if true_count >= 3:
+                self.message = "Insurance available! (True count +3: Consider taking it)"
+            else:
+                self.message = "Insurance available? (Not recommended at this count)"
+            return
+
         # Check for blackjack
         if player_value == 21:
             dealer_value = calculate_hand_value(self.dealer_hand)
@@ -208,10 +221,15 @@ class BlackjackGame:
 
             if dealer_value == 21:
                 self.message = "Push! Both have blackjack"
+                self.stats.record_hand('push', self.current_bet, 0)
             else:
                 blackjack_winnings = int(self.current_bet * 1.5)
                 self.bankroll += blackjack_winnings
                 self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
+                self.stats.record_hand('win', self.current_bet, blackjack_winnings, is_blackjack=True)
+            
+            true_count = get_true_count(self.running_count, self.cards_dealt, self.num_decks)
+            self.stats.record_bankroll(self.bankroll, self.running_count, true_count)
             self.game_state = "finished"
         else:
             self.game_state = "playing"
