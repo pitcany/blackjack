@@ -156,6 +156,14 @@ class BlackjackGame:
         # Info and shoe buttons
         self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
         self.new_shoe_btn = Button(SCREEN_WIDTH - 220, 20, 200, 40, "New Shoe", (70, 70, 70))
+        
+        # Statistics buttons
+        self.stats_btn = Button(240, 20, 200, 40, "Statistics", (100, 50, 150))
+        self.export_csv_btn = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 120, 200, 40, "Export CSV", (0, 100, 150))
+        self.reset_stats_btn = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 70, 200, 40, "Reset Stats", (150, 50, 0))
+        
+        # Insurance button
+        self.insurance_btn = Button(SCREEN_WIDTH // 2 - 100, 700, 200, 60, "INSURANCE", (255, 140, 0))
 
     def initialize_deck(self):
         """Create and shuffle a new deck."""
