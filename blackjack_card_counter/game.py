@@ -855,12 +855,20 @@ class BlackjackGame:
             self.double_btn.draw(self.screen)
             self.split_btn.draw(self.screen)
 
+        elif self.game_state == "insurance":
+            self.insurance_btn.draw(self.screen)
+            # Also show decline option
+            decline_btn_text = MEDIUM_FONT.render("Press SPACE to decline", True, WHITE)
+            decline_rect = decline_btn_text.get_rect(center=(SCREEN_WIDTH // 2, 780))
+            self.screen.blit(decline_btn_text, decline_rect)
+
         elif self.game_state == "finished":
             self.new_hand_btn.draw(self.screen)
 
         # Always visible buttons
         self.info_btn.draw(self.screen)
         self.new_shoe_btn.draw(self.screen)
+        self.stats_btn.draw(self.screen)
 
         # Modals
         if self.show_info:
@@ -868,6 +876,9 @@ class BlackjackGame:
 
         if self.show_bankroll_edit:
             self.draw_bankroll_modal()
+
+        if self.show_stats:
+            self.draw_stats_panel()
 
     def handle_events(self) -> bool:
         """Handle pygame events.
