@@ -622,6 +622,90 @@ class BlackjackGame:
             self.screen.blit(text_surf, (box_x + 30, y_offset))
             y_offset += line_height
 
+    def draw_stats_panel(self):
+        """Draw the statistics panel."""
+        if not self.show_stats:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill(BLACK)
+        self.screen.blit(overlay, (0, 0))
+
+        box_width = 900
+        box_height = 700
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
+
+        title = LARGE_FONT.render("Session Statistics", True, GOLD)
+        self.screen.blit(title, (box_x + 20, box_y + 20))
+
+        y_offset = box_y + 80
+        line_height = 35
+        
+        # Get statistics
+        win_rate = self.stats.get_win_rate()
+        net_profit = self.stats.get_net_profit()
+        roi = self.stats.get_roi()
+        duration = self.stats.get_session_duration()
+        
+        # Calculate current session profit
+        session_profit = self.bankroll - self.starting_bankroll
+
+        stats_data = [
+            ("Session Overview:", WHITE, True),
+            (f"  Duration: {duration}", WHITE, False),
+            (f"  Starting Bankroll: ${self.starting_bankroll}", WHITE, False),
+            (f"  Current Bankroll: ${self.bankroll}", WHITE, False),
+            (f"  Session Profit/Loss: ${session_profit:+d}", 
+             (0, 255, 0) if session_profit >= 0 else RED, False),
+            ("", WHITE, False),
+            ("Hand Statistics:", WHITE, True),
+            (f"  Total Hands: {self.stats.hands_played}", WHITE, False),
+            (f"  Wins: {self.stats.hands_won}", (0, 255, 0), False),
+            (f"  Losses: {self.stats.hands_lost}", RED, False),
+            (f"  Pushes: {self.stats.hands_pushed}", YELLOW, False),
+            (f"  Blackjacks: {self.stats.blackjacks}", GOLD, False),
+            (f"  Win Rate: {win_rate:.1f}%", (0, 255, 0) if win_rate >= 50 else RED, False),
+            ("", WHITE, False),
+            ("Financial Statistics:", WHITE, True),
+            (f"  Total Wagered: ${self.stats.total_wagered}", WHITE, False),
+            (f"  Total Won: ${self.stats.total_won}", (0, 255, 0), False),
+            (f"  Total Lost: ${self.stats.total_lost}", RED, False),
+            (f"  Net Profit/Loss: ${net_profit:+d}", 
+             (0, 255, 0) if net_profit >= 0 else RED, False),
+            (f"  ROI: {roi:+.2f}%", (0, 255, 0) if roi >= 0 else RED, False),
+            (f"  Biggest Win: ${self.stats.biggest_win}", GOLD, False),
+            (f"  Biggest Loss: ${self.stats.biggest_loss}", RED, False),
+        ]
+
+        for text, color, bold in stats_data:
+            font = MEDIUM_FONT if bold else SMALL_FONT
+            text_surf = font.render(text, True, color)
+            self.screen.blit(text_surf, (box_x + 30, y_offset))
+            y_offset += line_height
+
+        # Draw export and reset buttons
+        self.export_csv_btn.rect.x = box_x + 150
+        self.export_csv_btn.rect.y = box_y + box_height - 110
+        self.export_csv_btn.draw(self.screen)
+
+        self.reset_stats_btn.rect.x = box_x + 550
+        self.reset_stats_btn.rect.y = box_y + box_height - 110
+        self.reset_stats_btn.draw(self.screen)
+
+        # Instructions
+        instruction = TINY_FONT.render("Press ESC or click anywhere to close", True, LIGHT_GRAY)
+        instruction_rect = instruction.get_rect(center=(box_x + box_width // 2, box_y + box_height - 30))
+        self.screen.blit(instruction, instruction_rect)
+
     def draw(self):
         """Draw the entire game screen."""
         self.screen.fill(DARK_GREEN)
