@@ -49,17 +49,26 @@ class BlackjackGame:
         self.running_count = 0
         self.cards_dealt = 0
         self.bankroll = 1000
+        self.starting_bankroll = 1000
         self.current_bet = 10
         self.game_state = "betting"
         self.message = "Place your bet to start"
         self.show_info = False
         self.show_bankroll_edit = False
+        self.show_stats = False
 
         # Split handling
         self.is_split = False
         self.split_hands: List[List[Card]] = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+
+        # Insurance handling
+        self.insurance_bet = 0
+        self.insurance_offered = False
+
+        # Statistics tracking
+        self.stats = SessionStats()
 
         # UI elements
         self.create_buttons()
