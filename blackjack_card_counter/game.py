@@ -60,6 +60,9 @@ class BlackjackGame:
         self.active_split_hand = 0
         self.split_doubled = [False, False]
 
+        # Double down tracking for non-split hands
+        self.hand_doubled = False
+
         # UI elements
         self.create_buttons()
         self.initialize_deck()
@@ -165,6 +168,7 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.hand_doubled = False
 
         # Deal player cards
         for _ in range(2):
@@ -222,8 +226,11 @@ class BlackjackGame:
             self.cards_dealt += 1
 
             if calculate_hand_value(self.player_hand) > 21:
+                # Count the dealer's hole card before finishing
+                self.running_count += self.dealer_hand[1].get_count_value()
+                actual_bet = self.current_bet * 2 if self.hand_doubled else self.current_bet
                 self.message = "Bust! Dealer wins"
-                self.bankroll -= self.current_bet
+                self.bankroll -= actual_bet
                 self.game_state = "finished"
 
     def stand(self):
@@ -258,7 +265,7 @@ class BlackjackGame:
             if self.current_bet * 2 > self.bankroll:
                 self.message = "Insufficient funds to double!"
                 return
-            self.current_bet *= 2
+            self.hand_doubled = True
 
         if self.is_split:
             card = self.deck.pop(0)
@@ -279,8 +286,11 @@ class BlackjackGame:
             self.cards_dealt += 1
 
             if calculate_hand_value(self.player_hand) > 21:
+                # Count the dealer's hole card before finishing
+                self.running_count += self.dealer_hand[1].get_count_value()
+                actual_bet = self.current_bet * 2 if self.hand_doubled else self.current_bet
                 self.message = "Bust! Dealer wins"
-                self.bankroll -= self.current_bet
+                self.bankroll -= actual_bet
                 self.game_state = "finished"
             else:
                 self.game_state = "dealer"
@@ -352,16 +362,17 @@ class BlackjackGame:
             )
         else:
             player_value = calculate_hand_value(self.player_hand)
+            actual_bet = self.current_bet * 2 if self.hand_doubled else self.current_bet
 
             if dealer_value > 21:
                 self.message = f"Dealer busts! You win with {player_value}!"
-                self.bankroll += self.current_bet
+                self.bankroll += actual_bet
             elif player_value > dealer_value:
                 self.message = f"You win! {player_value} beats {dealer_value}"
-                self.bankroll += self.current_bet
+                self.bankroll += actual_bet
             elif player_value < dealer_value:
                 self.message = f"Dealer wins. {dealer_value} beats {player_value}"
-                self.bankroll -= self.current_bet
+                self.bankroll -= actual_bet
             else:
                 self.message = f"Push! Both have {player_value}"
 
@@ -378,6 +389,7 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.hand_doubled = False
         self.game_state = "betting"
         self.message = "Place your bet to start"
 
