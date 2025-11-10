@@ -688,7 +688,8 @@ class BlackjackGame:
         # Betting advice
         if self.game_state == 'betting':
             units, advice = self.get_betting_advice()
-            advice_text = f"Recommended: {units} units (${units * 10}) - {advice}"
+            recommended_amount = units * self.current_bet
+            advice_text = f"Recommended: {units} units (${recommended_amount}) - {advice}"
             advice_surf = TINY_FONT.render(advice_text, True, YELLOW)
             advice_rect = advice_surf.get_rect(center=(SCREEN_WIDTH // 2, 150))
             self.screen.blit(advice_surf, advice_rect)
