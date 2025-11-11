@@ -160,6 +160,22 @@ class BlackjackGame:
         self.offered_insurance = False
         self.can_surrender = False
 
+        # Statistics tracking
+        self.stats = {
+            "hands_played": 0,
+            "hands_won": 0,
+            "hands_lost": 0,
+            "hands_pushed": 0,
+            "blackjacks": 0,
+            "doubles": 0,
+            "splits": 0,
+            "surrenders": 0,
+            "insurance_taken": 0,
+            "highest_bankroll": 1000,
+            "lowest_bankroll": 1000,
+        }
+        self.show_stats = False
+
         # UI elements
         self.create_buttons()
         self.initialize_deck()
@@ -219,8 +235,9 @@ class BlackjackGame:
         self.confirm_bankroll_btn = Button(SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 20, 80, 40, "OK", (0, 150, 0))
         self.cancel_bankroll_btn = Button(SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20, 80, 40, "Cancel", (150, 0, 0))
 
-        # Info and shoe buttons
+        # Info, stats, and shoe buttons
         self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
+        self.stats_btn = Button(230, 20, 200, 40, "Statistics", (150, 50, 50))
         self.new_shoe_btn = Button(SCREEN_WIDTH - 220, 20, 200, 40, "New Shoe", (70, 70, 70))
 
     def initialize_deck(self):
@@ -372,14 +389,21 @@ class BlackjackGame:
             dealer_value = self.calculate_hand_value(self.dealer_hand)
             self.running_count += self.dealer_hand[1].get_count_value()
 
+            self.stats["hands_played"] += 1
+            self.stats["blackjacks"] += 1
+
             if dealer_value == 21:
                 self.message = "Push! Both have blackjack"
+                self.stats["hands_pushed"] += 1
                 # No money changes hands on a push
             else:
                 # Blackjack pays 3:2 - you win 1.5x your bet
                 blackjack_winnings = int(self.current_bet * 1.5)
                 self.bankroll += blackjack_winnings
                 self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
+                self.stats["hands_won"] += 1
+
+            self._update_bankroll_stats()
             self.game_state = 'finished'
         else:
             # Check for dealer blackjack (when showing Ace or 10-value)
@@ -396,6 +420,9 @@ class BlackjackGame:
                     self.running_count += self.dealer_hand[1].get_count_value()
                     self.bankroll -= self.current_bet
                     self.message = "Dealer has blackjack! You lose"
+                    self.stats["hands_played"] += 1
+                    self.stats["hands_lost"] += 1
+                    self._update_bankroll_stats()
                     self.game_state = 'finished'
                     return
 
@@ -480,6 +507,8 @@ class BlackjackGame:
                 return
             self.hand_doubled = True
 
+        self.stats["doubles"] += 1
+
         if self.is_split:
             card = self.deck.pop(0)
             self.split_hands[self.active_split_hand].append(card)
@@ -519,6 +548,7 @@ class BlackjackGame:
 
         self.is_split = True
         self.split_hands = [[self.player_hand[0]], [self.player_hand[1]]]
+        self.stats["splits"] += 1
 
         for i in range(2):
             card = self.deck.pop(0)
@@ -539,6 +569,7 @@ class BlackjackGame:
         self.insurance_bet = insurance_cost
         self.bankroll -= insurance_cost
         self.offered_insurance = False
+        self.stats["insurance_taken"] += 1
 
         # Check if dealer has blackjack
         dealer_value = self.calculate_hand_value(self.dealer_hand)
@@ -549,9 +580,13 @@ class BlackjackGame:
             insurance_payout = insurance_cost * 3  # Original bet + 2:1 payout
             self.bankroll += insurance_payout
             self.message = f"Dealer blackjack! Insurance pays ${insurance_cost * 2}"
+            self.stats["hands_played"] += 1
+            self.stats["hands_lost"] += 1  # Lost main bet
+            self._update_bankroll_stats()
             self.game_state = 'finished'
         else:
             self.message = f"No dealer blackjack. Lost ${insurance_cost} insurance"
+            self._update_bankroll_stats()
 
     def decline_insurance(self):
         """Player declines insurance."""
@@ -564,6 +599,10 @@ class BlackjackGame:
         self.bankroll -= self.current_bet // 2
         self.running_count += self.dealer_hand[1].get_count_value()
         self.message = f"Surrendered. Lost ${self.current_bet // 2}"
+        self.stats["hands_played"] += 1
+        self.stats["surrenders"] += 1
+        self.stats["hands_lost"] += 1
+        self._update_bankroll_stats()
         self.game_state = 'finished'
 
     def dealer_play(self):
@@ -586,6 +625,9 @@ class BlackjackGame:
         if self.is_split:
             total_win = 0
             results = []
+            wins = 0
+            losses = 0
+            pushes = 0
 
             for i in range(2):
                 hand_value = self.calculate_hand_value(self.split_hands[i])
@@ -594,37 +636,62 @@ class BlackjackGame:
                 if hand_value > 21:
                     results.append(f"Hand {i+1}: Bust")
                     total_win -= hand_bet
+                    losses += 1
                 elif dealer_value > 21:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    wins += 1
                 elif hand_value > dealer_value:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    wins += 1
                 elif hand_value < dealer_value:
                     results.append(f"Hand {i+1}: Loss")
                     total_win -= hand_bet
+                    losses += 1
                 else:
                     results.append(f"Hand {i+1}: Push")
+                    pushes += 1
 
             self.bankroll += total_win
             self.message = " | ".join(results) + f" | Net: {'+' if total_win >= 0 else ''}${total_win}"
+
+            # Update statistics for split hands
+            self.stats["hands_played"] += 1
+            self.stats["hands_won"] += wins
+            self.stats["hands_lost"] += losses
+            self.stats["hands_pushed"] += pushes
         else:
             player_value = self.calculate_hand_value(self.player_hand)
             actual_bet = self.current_bet * 2 if self.hand_doubled else self.current_bet
 
+            self.stats["hands_played"] += 1
+
             if dealer_value > 21:
                 self.message = f"Dealer busts! You win with {player_value}!"
                 self.bankroll += actual_bet
+                self.stats["hands_won"] += 1
             elif player_value > dealer_value:
                 self.message = f"You win! {player_value} beats {dealer_value}"
                 self.bankroll += actual_bet
+                self.stats["hands_won"] += 1
             elif player_value < dealer_value:
                 self.message = f"Dealer wins. {dealer_value} beats {player_value}"
                 self.bankroll -= actual_bet
+                self.stats["hands_lost"] += 1
             else:
                 self.message = f"Push! Both have {player_value}"
+                self.stats["hands_pushed"] += 1
 
+        self._update_bankroll_stats()
         self.game_state = 'finished'
+
+    def _update_bankroll_stats(self):
+        """Update highest/lowest bankroll statistics."""
+        if self.bankroll > self.stats["highest_bankroll"]:
+            self.stats["highest_bankroll"] = self.bankroll
+        if self.bankroll < self.stats["lowest_bankroll"]:
+            self.stats["lowest_bankroll"] = self.bankroll
 
     def start_new_hand(self):
         if len(self.deck) < 20:
@@ -753,6 +820,73 @@ class BlackjackGame:
             text_surf = font.render(text, True, color)
             self.screen.blit(text_surf, (box_x + 30, y_offset))
             y_offset += line_height
+
+    def draw_stats_panel(self):
+        """Draw the statistics panel."""
+        if not self.show_stats:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill(BLACK)
+        self.screen.blit(overlay, (0, 0))
+
+        box_width = 800
+        box_height = 600
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+
+        pygame.draw.rect(self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10)
+        pygame.draw.rect(self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10)
+
+        title = LARGE_FONT.render("Session Statistics", True, GOLD)
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, box_y + 30))
+        self.screen.blit(title, title_rect)
+
+        y_offset = box_y + 100
+        line_height = 40
+
+        # Calculate win rate
+        total_completed = self.stats["hands_won"] + self.stats["hands_lost"] + self.stats["hands_pushed"]
+        win_rate = (self.stats["hands_won"] / total_completed * 100) if total_completed > 0 else 0
+
+        # Calculate profit/loss
+        profit_loss = self.bankroll - 1000  # Assuming starting bankroll is 1000
+        profit_color = (0, 200, 0) if profit_loss >= 0 else (200, 0, 0)
+
+        stats_display = [
+            ("Hands Played:", str(self.stats["hands_played"]), WHITE),
+            ("Hands Won:", str(self.stats["hands_won"]), (0, 200, 0)),
+            ("Hands Lost:", str(self.stats["hands_lost"]), (200, 0, 0)),
+            ("Hands Pushed:", str(self.stats["hands_pushed"]), YELLOW),
+            ("Win Rate:", f"{win_rate:.1f}%", GOLD),
+            ("", "", WHITE),
+            ("Blackjacks:", str(self.stats["blackjacks"]), GOLD),
+            ("Doubles:", str(self.stats["doubles"]), WHITE),
+            ("Splits:", str(self.stats["splits"]), WHITE),
+            ("Surrenders:", str(self.stats["surrenders"]), WHITE),
+            ("Insurance Taken:", str(self.stats["insurance_taken"]), WHITE),
+            ("", "", WHITE),
+            ("Current Bankroll:", f"${self.bankroll}", WHITE),
+            ("Highest Bankroll:", f"${self.stats['highest_bankroll']}", (0, 200, 0)),
+            ("Lowest Bankroll:", f"${self.stats['lowest_bankroll']}", (200, 100, 0)),
+            ("Profit/Loss:", f"${profit_loss:+d}", profit_color),
+        ]
+
+        for label, value, color in stats_display:
+            if label:  # Skip empty lines
+                label_surf = MEDIUM_FONT.render(label, True, WHITE)
+                value_surf = MEDIUM_FONT.render(value, True, color)
+                self.screen.blit(label_surf, (box_x + 100, y_offset))
+                value_rect = value_surf.get_rect(right=box_x + box_width - 100)
+                value_rect.y = y_offset
+                self.screen.blit(value_surf, value_rect)
+            y_offset += line_height
+
+        # Close instructions
+        close_text = SMALL_FONT.render("Press ESC or click anywhere to close", True, LIGHT_GRAY)
+        close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 40))
+        self.screen.blit(close_text, close_rect)
 
     def draw(self):
         self.screen.fill(DARK_GREEN)
@@ -913,11 +1047,15 @@ class BlackjackGame:
 
         # Always visible buttons
         self.info_btn.draw(self.screen)
+        self.stats_btn.draw(self.screen)
         self.new_shoe_btn.draw(self.screen)
 
         # Modals
         if self.show_info:
             self.draw_info_panel()
+
+        if self.show_stats:
+            self.draw_stats_panel()
 
         if self.show_bankroll_edit:
             self.draw_bankroll_modal()
@@ -931,6 +1069,8 @@ class BlackjackGame:
                 if event.key == pygame.K_ESCAPE:
                     if self.show_info:
                         self.show_info = False
+                    elif self.show_stats:
+                        self.show_stats = False
                     elif self.show_bankroll_edit:
                         self.show_bankroll_edit = False
                     else:
@@ -957,6 +1097,11 @@ class BlackjackGame:
                 self.show_info = False
                 continue
 
+            # Close stats panel on click
+            if event.type == pygame.MOUSEBUTTONDOWN and self.show_stats:
+                self.show_stats = False
+                continue
+
             # Always-available buttons
             if self.edit_bankroll_btn.handle_event(event):
                 self.show_bankroll_edit = True
@@ -965,6 +1110,10 @@ class BlackjackGame:
 
             if self.info_btn.handle_event(event):
                 self.show_info = not self.show_info
+                continue
+
+            if self.stats_btn.handle_event(event):
+                self.show_stats = not self.show_stats
                 continue
 
             if self.new_shoe_btn.handle_event(event):
