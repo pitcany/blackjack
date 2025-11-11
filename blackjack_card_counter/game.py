@@ -221,7 +221,7 @@ class BlackjackGame:
 
         player_value = calculate_hand_value(self.player_hand)
 
-        # Check for blackjack
+        # Check for player blackjack
         if player_value == 21:
             dealer_value = calculate_hand_value(self.dealer_hand)
             self.running_count += self.dealer_hand[1].get_count_value()
@@ -234,6 +234,24 @@ class BlackjackGame:
                 self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
             self.game_state = "finished"
         else:
+            # Check for dealer blackjack (when showing Ace or 10-value)
+            dealer_up_card = self.dealer_hand[0]
+            should_check_dealer_bj = (
+                dealer_up_card.rank == "A" or
+                dealer_up_card.rank in ["10", "J", "Q", "K"]
+            )
+
+            if should_check_dealer_bj:
+                dealer_value = calculate_hand_value(self.dealer_hand)
+                if dealer_value == 21:
+                    # Dealer has blackjack - hand ends immediately
+                    self.running_count += self.dealer_hand[1].get_count_value()
+                    self.bankroll -= self.current_bet
+                    self.message = "Dealer has blackjack! You lose"
+                    self.game_state = "finished"
+                    return
+
+            # No dealer blackjack - proceed to playing
             self.game_state = "playing"
             self.can_surrender = True  # Can surrender on initial 2-card hand
 
