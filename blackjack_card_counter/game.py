@@ -63,6 +63,11 @@ class BlackjackGame:
         # Double down tracking for non-split hands
         self.hand_doubled = False
 
+        # Insurance and surrender
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
+
         # UI elements
         self.create_buttons()
         self.initialize_deck()
@@ -97,6 +102,32 @@ class BlackjackGame:
             button_height,
             "SPLIT",
             (128, 0, 128),
+        )
+
+        # Insurance and surrender buttons (second row)
+        button_y2 = 630
+        button_width2 = 140
+        button_height2 = 50
+        start_x2 = (SCREEN_WIDTH - (2 * button_width2 + spacing)) // 2
+
+        self.insurance_btn = Button(
+            start_x2, button_y2, button_width2, button_height2, "INSURANCE", (0, 100, 150)
+        )
+        self.no_insurance_btn = Button(
+            start_x2 + button_width2 + spacing,
+            button_y2,
+            button_width2,
+            button_height2,
+            "NO INS",
+            (100, 100, 100),
+        )
+        self.surrender_btn = Button(
+            start_x2 + 2 * (button_width2 + spacing),
+            button_y2,
+            button_width2,
+            button_height2,
+            "SURRENDER",
+            (150, 50, 0),
         )
 
         # Deal and new hand buttons
@@ -169,6 +200,9 @@ class BlackjackGame:
         self.active_split_hand = 0
         self.split_doubled = [False, False]
         self.hand_doubled = False
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
 
         # Deal player cards
         for _ in range(2):
@@ -201,10 +235,20 @@ class BlackjackGame:
             self.game_state = "finished"
         else:
             self.game_state = "playing"
-            self.message = "Make your move"
+            self.can_surrender = True  # Can surrender on initial 2-card hand
+
+            # Check if insurance should be offered (dealer shows Ace)
+            if self.dealer_hand[0].rank == "A":
+                self.offered_insurance = True
+                self.message = "Dealer shows Ace - Insurance available"
+            else:
+                self.message = "Make your move"
 
     def hit(self):
         """Player hits (takes another card)."""
+        self.can_surrender = False  # Can't surrender after taking a card
+        self.offered_insurance = False  # Can't take insurance after hitting
+
         if self.is_split:
             card = self.deck.pop(0)
             self.split_hands[self.active_split_hand].append(card)
@@ -235,6 +279,9 @@ class BlackjackGame:
 
     def stand(self):
         """Player stands (ends turn)."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.is_split and self.active_split_hand == 0:
             self.active_split_hand = 1
             self.message = "Playing hand 2"
@@ -255,6 +302,9 @@ class BlackjackGame:
 
     def double_down(self):
         """Player doubles down."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.is_split:
             total_exposure = self._calculate_split_double_exposure()
             if total_exposure > self.bankroll:
@@ -298,6 +348,9 @@ class BlackjackGame:
 
     def split(self):
         """Player splits their hand."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.current_bet * 2 > self.bankroll:
             self.message = "Insufficient funds to split!"
             return
@@ -313,6 +366,43 @@ class BlackjackGame:
 
         self.active_split_hand = 0
         self.message = "Playing hand 1"
+
+    def take_insurance(self):
+        """Player takes insurance bet."""
+        insurance_cost = self.current_bet // 2
+        if insurance_cost > self.bankroll:
+            self.message = "Insufficient funds for insurance!"
+            return
+
+        self.insurance_bet = insurance_cost
+        self.bankroll -= insurance_cost
+        self.offered_insurance = False
+
+        # Check if dealer has blackjack
+        dealer_value = calculate_hand_value(self.dealer_hand)
+        self.running_count += self.dealer_hand[1].get_count_value()
+
+        if dealer_value == 21:
+            # Insurance pays 2:1
+            insurance_payout = insurance_cost * 3  # Original bet + 2:1 payout
+            self.bankroll += insurance_payout
+            self.message = f"Dealer blackjack! Insurance pays ${insurance_cost * 2}"
+            self.game_state = "finished"
+        else:
+            self.message = f"No dealer blackjack. Lost ${insurance_cost} insurance"
+
+    def decline_insurance(self):
+        """Player declines insurance."""
+        self.offered_insurance = False
+        self.message = "Insurance declined. Make your move"
+
+    def surrender(self):
+        """Player surrenders, losing half their bet."""
+        self.can_surrender = False
+        self.bankroll -= self.current_bet // 2
+        self.running_count += self.dealer_hand[1].get_count_value()
+        self.message = f"Surrendered. Lost ${self.current_bet // 2}"
+        self.game_state = "finished"
 
     def dealer_play(self):
         """Dealer plays their hand."""
@@ -390,6 +480,9 @@ class BlackjackGame:
         self.active_split_hand = 0
         self.split_doubled = [False, False]
         self.hand_doubled = False
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
         self.game_state = "betting"
         self.message = "Place your bet to start"
 
@@ -664,6 +757,17 @@ class BlackjackGame:
             self.double_btn.draw(self.screen)
             self.split_btn.draw(self.screen)
 
+            # Insurance and surrender buttons
+            if self.offered_insurance:
+                self.insurance_btn.enabled = self.insurance_bet == 0 and self.current_bet // 2 <= self.bankroll
+                self.insurance_btn.draw(self.screen)
+                self.no_insurance_btn.enabled = True
+                self.no_insurance_btn.draw(self.screen)
+
+            if self.can_surrender:
+                self.surrender_btn.enabled = True
+                self.surrender_btn.draw(self.screen)
+
         elif self.game_state == "finished":
             self.new_hand_btn.draw(self.screen)
 
@@ -760,6 +864,20 @@ class BlackjackGame:
                         self.custom_bet_input.text = ""
 
             elif self.game_state == "playing":
+                # Insurance and surrender have priority
+                if self.offered_insurance:
+                    if self.insurance_btn.handle_event(event):
+                        self.take_insurance()
+                        continue
+                    elif self.no_insurance_btn.handle_event(event):
+                        self.decline_insurance()
+                        continue
+
+                if self.can_surrender and self.surrender_btn.handle_event(event):
+                    self.surrender()
+                    continue
+
+                # Regular action buttons
                 if self.hit_btn.handle_event(event):
                     self.hit()
                 elif self.stand_btn.handle_event(event):
