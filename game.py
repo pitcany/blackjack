@@ -177,6 +177,16 @@ class BlackjackGame:
         }
         self.show_stats = False
 
+        # House rules configuration
+        self.house_rules = {
+            "dealer_hits_soft_17": False,       # Dealer stands on all 17s (standard)
+            "blackjack_payout": 1.5,            # 3:2 payout (standard), can be 1.2 for 6:5
+            "double_after_split": True,         # Allow doubling after split
+            "surrender_allowed": True,          # Allow surrender option
+            "insurance_allowed": True,          # Allow insurance option
+        }
+        self.show_rules = False
+
         # UI elements
         self.create_buttons()
         self.initialize_deck()
@@ -236,9 +246,10 @@ class BlackjackGame:
         self.confirm_bankroll_btn = Button(SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 20, 80, 40, "OK", (0, 150, 0))
         self.cancel_bankroll_btn = Button(SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20, 80, 40, "Cancel", (150, 0, 0))
 
-        # Info, stats, and shoe buttons
-        self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
-        self.stats_btn = Button(230, 20, 200, 40, "Statistics", (150, 50, 50))
+        # Info, stats, rules, and shoe buttons
+        self.info_btn = Button(20, 20, 180, 40, "Show Help", (50, 50, 150))
+        self.stats_btn = Button(210, 20, 180, 40, "Statistics", (150, 50, 50))
+        self.rules_btn = Button(400, 20, 180, 40, "House Rules", (50, 100, 50))
         self.new_shoe_btn = Button(SCREEN_WIDTH - 220, 20, 200, 40, "New Shoe", (70, 70, 70))
 
     def initialize_deck(self):
@@ -400,9 +411,10 @@ class BlackjackGame:
                 # No money changes hands on a push
             else:
                 # Blackjack pays 3:2 - you win 1.5x your bet
-                blackjack_winnings = int(self.current_bet * 1.5)
+                blackjack_winnings = int(self.current_bet * self.house_rules["blackjack_payout"])
                 self.bankroll += blackjack_winnings
-                self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
+                payout_str = "3:2" if self.house_rules["blackjack_payout"] == 1.5 else "6:5"
+                self.message = f"Blackjack! You win ${blackjack_winnings} ({payout_str} payout)"
                 self.stats["hands_won"] += 1
 
             self._update_bankroll_stats()
@@ -616,10 +628,31 @@ class BlackjackGame:
         self._update_bankroll_stats()
         self.game_state = 'finished'
 
+    def _is_soft_hand(self, hand, value):
+        """Check if a hand is soft (has Ace counted as 11)."""
+        has_ace = any(card.rank == "A" for card in hand)
+        if not has_ace or value > 21:
+            return False
+        sum_aces_as_one = sum(
+            1 if card.rank == "A" else (10 if card.rank in ["J", "Q", "K"] else int(card.rank))
+            for card in hand
+        )
+        return (sum_aces_as_one + 10) == value
+
     def dealer_play(self):
         self.running_count += self.dealer_hand[1].get_count_value()
 
-        while self.calculate_hand_value(self.dealer_hand) < 17:
+        while True:
+            dealer_value = self.calculate_hand_value(self.dealer_hand)
+
+            if dealer_value < 17:
+                pass
+            elif dealer_value == 17 and self.house_rules["dealer_hits_soft_17"]:
+                if not self._is_soft_hand(self.dealer_hand, dealer_value):
+                    break
+            else:
+                break
+
             pygame.time.wait(500)
             card = self.deck.pop(0)
             self.dealer_hand.append(card)

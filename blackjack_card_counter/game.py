@@ -85,6 +85,16 @@ class BlackjackGame:
         }
         self.show_stats = False
 
+        # House rules configuration
+        self.house_rules = {
+            "dealer_hits_soft_17": False,       # Dealer stands on all 17s (standard)
+            "blackjack_payout": 1.5,            # 3:2 payout (standard), can be 1.2 for 6:5
+            "double_after_split": True,         # Allow doubling after split
+            "surrender_allowed": True,          # Allow surrender option
+            "insurance_allowed": True,          # Allow insurance option
+        }
+        self.show_rules = False
+
         # UI elements
         self.create_buttons()
         self.initialize_deck()
@@ -194,9 +204,10 @@ class BlackjackGame:
             SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20, 80, 40, "Cancel", (150, 0, 0)
         )
 
-        # Info, stats, and shoe buttons
-        self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
-        self.stats_btn = Button(230, 20, 200, 40, "Statistics", (150, 50, 50))
+        # Info, stats, rules, and shoe buttons
+        self.info_btn = Button(20, 20, 180, 40, "Show Help", (50, 50, 150))
+        self.stats_btn = Button(210, 20, 180, 40, "Statistics", (150, 50, 50))
+        self.rules_btn = Button(400, 20, 180, 40, "House Rules", (50, 100, 50))
         self.new_shoe_btn = Button(SCREEN_WIDTH - 220, 20, 200, 40, "New Shoe", (70, 70, 70))
 
     def initialize_deck(self):
@@ -252,9 +263,10 @@ class BlackjackGame:
                 self.message = "Push! Both have blackjack"
                 self.stats["hands_pushed"] += 1
             else:
-                blackjack_winnings = int(self.current_bet * 1.5)
+                blackjack_winnings = int(self.current_bet * self.house_rules["blackjack_payout"])
                 self.bankroll += blackjack_winnings
-                self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
+                payout_str = "3:2" if self.house_rules["blackjack_payout"] == 1.5 else "6:5"
+                self.message = f"Blackjack! You win ${blackjack_winnings} ({payout_str} payout)"
                 self.stats["hands_won"] += 1
 
             self._update_bankroll_stats()
@@ -282,10 +294,10 @@ class BlackjackGame:
 
             # No dealer blackjack - proceed to playing
             self.game_state = "playing"
-            self.can_surrender = True  # Can surrender on initial 2-card hand
+            self.can_surrender = self.house_rules["surrender_allowed"]  # Respect house rule
 
             # Check if insurance should be offered (dealer shows Ace)
-            if self.dealer_hand[0].rank == "A":
+            if self.dealer_hand[0].rank == "A" and self.house_rules["insurance_allowed"]:
                 self.offered_insurance = True
                 self.message = "Dealer shows Ace - Insurance available"
             else:
@@ -472,11 +484,37 @@ class BlackjackGame:
         self._update_bankroll_stats()
         self.game_state = "finished"
 
+    def _is_soft_hand(self, hand: List[Card], value: int) -> bool:
+        """Check if a hand is soft (has Ace counted as 11)."""
+        has_ace = any(card.rank == "A" for card in hand)
+        if not has_ace or value > 21:
+            return False
+        # Calculate value with all aces as 1
+        sum_aces_as_one = sum(
+            1 if card.rank == "A" else (10 if card.rank in ["J", "Q", "K"] else int(card.rank))
+            for card in hand
+        )
+        # If adding 10 to this sum equals the hand value, an ace is counted as 11
+        return (sum_aces_as_one + 10) == value
+
     def dealer_play(self):
         """Dealer plays their hand."""
         self.running_count += self.dealer_hand[1].get_count_value()
 
-        while calculate_hand_value(self.dealer_hand) < 17:
+        while True:
+            dealer_value = calculate_hand_value(self.dealer_hand)
+
+            # Dealer must hit on 16 or less
+            if dealer_value < 17:
+                pass  # Continue to hit
+            # Check soft 17 rule
+            elif dealer_value == 17 and self.house_rules["dealer_hits_soft_17"]:
+                if not self._is_soft_hand(self.dealer_hand, dealer_value):
+                    break  # Hard 17, dealer stands
+                # Soft 17, dealer hits
+            else:
+                break  # 18+ or hard 17 with standard rules
+
             pygame.time.wait(500)
             card = self.deck.pop(0)
             self.dealer_hand.append(card)
@@ -704,6 +742,62 @@ class BlackjackGame:
             self.screen.blit(text_surf, (box_x + 30, y_offset))
             y_offset += line_height
 
+    def draw_rules_panel(self):
+        """Draw the house rules panel."""
+        if not self.show_rules:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill(BLACK)
+        self.screen.blit(overlay, (0, 0))
+
+        box_width = 700
+        box_height = 450
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
+
+        title = LARGE_FONT.render("House Rules", True, GOLD)
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, box_y + 30))
+        self.screen.blit(title, title_rect)
+
+        y_offset = box_y + 100
+        line_height = 50
+
+        rules_display = [
+            ("Dealer Hits Soft 17:", "YES" if self.house_rules["dealer_hits_soft_17"] else "NO"),
+            ("Blackjack Payout:", "3:2" if self.house_rules["blackjack_payout"] == 1.5 else "6:5"),
+            ("Double After Split:", "Allowed" if self.house_rules["double_after_split"] else "Not Allowed"),
+            ("Surrender:", "Allowed" if self.house_rules["surrender_allowed"] else "Not Allowed"),
+            ("Insurance:", "Allowed" if self.house_rules["insurance_allowed"] else "Not Allowed"),
+        ]
+
+        for rule_name, rule_value in rules_display:
+            label_surf = MEDIUM_FONT.render(rule_name, True, WHITE)
+            value_color = (0, 200, 0) if "Allowed" in rule_value or rule_value == "YES" or rule_value == "3:2" else (200, 200, 0)
+            value_surf = MEDIUM_FONT.render(rule_value, True, value_color)
+            self.screen.blit(label_surf, (box_x + 80, y_offset))
+            value_rect = value_surf.get_rect(right=box_x + box_width - 80)
+            value_rect.y = y_offset
+            self.screen.blit(value_surf, value_rect)
+            y_offset += line_height
+
+        # Instructions
+        info_text = SMALL_FONT.render("Rules can be modified in the game code (self.house_rules)", True, LIGHT_GRAY)
+        info_rect = info_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 60))
+        self.screen.blit(info_text, info_rect)
+
+        close_text = SMALL_FONT.render("Press ESC or click anywhere to close", True, LIGHT_GRAY)
+        close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 30))
+        self.screen.blit(close_text, close_rect)
+
     def draw_stats_panel(self):
         """Draw the statistics panel."""
         if not self.show_stats:
@@ -911,7 +1005,11 @@ class BlackjackGame:
             # Calculate if player can afford to double
             if self.is_split:
                 total_exposure = self._calculate_split_double_exposure()
-                can_double = len(hand) == 2 and total_exposure <= self.bankroll
+                can_double = (
+                    len(hand) == 2
+                    and total_exposure <= self.bankroll
+                    and self.house_rules["double_after_split"]
+                )
             else:
                 can_double = len(hand) == 2 and self.current_bet * 2 <= self.bankroll
 
@@ -926,13 +1024,13 @@ class BlackjackGame:
             self.split_btn.draw(self.screen)
 
             # Insurance and surrender buttons
-            if self.offered_insurance:
+            if self.offered_insurance and self.house_rules["insurance_allowed"]:
                 self.insurance_btn.enabled = self.insurance_bet == 0 and self.current_bet // 2 <= self.bankroll
                 self.insurance_btn.draw(self.screen)
                 self.no_insurance_btn.enabled = True
                 self.no_insurance_btn.draw(self.screen)
 
-            if self.can_surrender:
+            if self.can_surrender and self.house_rules["surrender_allowed"]:
                 self.surrender_btn.enabled = True
                 self.surrender_btn.draw(self.screen)
 
@@ -942,6 +1040,7 @@ class BlackjackGame:
         # Always visible buttons
         self.info_btn.draw(self.screen)
         self.stats_btn.draw(self.screen)
+        self.rules_btn.draw(self.screen)
         self.new_shoe_btn.draw(self.screen)
 
         # Modals
@@ -950,6 +1049,9 @@ class BlackjackGame:
 
         if self.show_stats:
             self.draw_stats_panel()
+
+        if self.show_rules:
+            self.draw_rules_panel()
 
         if self.show_bankroll_edit:
             self.draw_bankroll_modal()
@@ -970,6 +1072,8 @@ class BlackjackGame:
                         self.show_info = False
                     elif self.show_stats:
                         self.show_stats = False
+                    elif self.show_rules:
+                        self.show_rules = False
                     elif self.show_bankroll_edit:
                         self.show_bankroll_edit = False
                     else:
@@ -1001,6 +1105,11 @@ class BlackjackGame:
                 self.show_stats = False
                 continue
 
+            # Close rules panel on click
+            if event.type == pygame.MOUSEBUTTONDOWN and self.show_rules:
+                self.show_rules = False
+                continue
+
             # Always-available buttons
             if self.edit_bankroll_btn.handle_event(event):
                 self.show_bankroll_edit = True
@@ -1013,6 +1122,10 @@ class BlackjackGame:
 
             if self.stats_btn.handle_event(event):
                 self.show_stats = not self.show_stats
+                continue
+
+            if self.rules_btn.handle_event(event):
+                self.show_rules = not self.show_rules
                 continue
 
             if self.new_shoe_btn.handle_event(event):
