@@ -59,9 +59,41 @@ class BlackjackGame:
         self.split_hands: List[List[Card]] = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.split_aces = False  # Track if Aces were split (special rule: one card only)
 
         # Double down tracking for non-split hands
         self.hand_doubled = False
+
+        # Insurance and surrender
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
+
+        # Statistics tracking
+        self.stats = {
+            "hands_played": 0,
+            "hands_won": 0,
+            "hands_lost": 0,
+            "hands_pushed": 0,
+            "blackjacks": 0,
+            "doubles": 0,
+            "splits": 0,
+            "surrenders": 0,
+            "insurance_taken": 0,
+            "highest_bankroll": 1000,
+            "lowest_bankroll": 1000,
+        }
+        self.show_stats = False
+
+        # House rules configuration
+        self.house_rules = {
+            "dealer_hits_soft_17": False,       # Dealer stands on all 17s (standard)
+            "blackjack_payout": 1.5,            # 3:2 payout (standard), can be 1.2 for 6:5
+            "double_after_split": True,         # Allow doubling after split
+            "surrender_allowed": True,          # Allow surrender option
+            "insurance_allowed": True,          # Allow insurance option
+        }
+        self.show_rules = False
 
         # UI elements
         self.create_buttons()
@@ -97,6 +129,32 @@ class BlackjackGame:
             button_height,
             "SPLIT",
             (128, 0, 128),
+        )
+
+        # Insurance and surrender buttons (second row)
+        button_y2 = 630
+        button_width2 = 140
+        button_height2 = 50
+        start_x2 = (SCREEN_WIDTH - (2 * button_width2 + spacing)) // 2
+
+        self.insurance_btn = Button(
+            start_x2, button_y2, button_width2, button_height2, "INSURANCE", (0, 100, 150)
+        )
+        self.no_insurance_btn = Button(
+            start_x2 + button_width2 + spacing,
+            button_y2,
+            button_width2,
+            button_height2,
+            "NO INS",
+            (100, 100, 100),
+        )
+        self.surrender_btn = Button(
+            start_x2 + 2 * (button_width2 + spacing),
+            button_y2,
+            button_width2,
+            button_height2,
+            "SURRENDER",
+            (150, 50, 0),
         )
 
         # Deal and new hand buttons
@@ -146,8 +204,10 @@ class BlackjackGame:
             SCREEN_WIDTH // 2 + 10, SCREEN_HEIGHT // 2 + 20, 80, 40, "Cancel", (150, 0, 0)
         )
 
-        # Info and shoe buttons
-        self.info_btn = Button(20, 20, 200, 40, "Show Help", (50, 50, 150))
+        # Info, stats, rules, and shoe buttons
+        self.info_btn = Button(20, 20, 180, 40, "Show Help", (50, 50, 150))
+        self.stats_btn = Button(210, 20, 180, 40, "Statistics", (150, 50, 50))
+        self.rules_btn = Button(400, 20, 180, 40, "House Rules", (50, 100, 50))
         self.new_shoe_btn = Button(SCREEN_WIDTH - 220, 20, 200, 40, "New Shoe", (70, 70, 70))
 
     def initialize_deck(self):
@@ -168,7 +228,11 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.split_aces = False
         self.hand_doubled = False
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
 
         # Deal player cards
         for _ in range(2):
@@ -187,24 +251,63 @@ class BlackjackGame:
 
         player_value = calculate_hand_value(self.player_hand)
 
-        # Check for blackjack
+        # Check for player blackjack
         if player_value == 21:
             dealer_value = calculate_hand_value(self.dealer_hand)
             self.running_count += self.dealer_hand[1].get_count_value()
 
+            self.stats["hands_played"] += 1
+            self.stats["blackjacks"] += 1
+
             if dealer_value == 21:
                 self.message = "Push! Both have blackjack"
+                self.stats["hands_pushed"] += 1
             else:
-                blackjack_winnings = int(self.current_bet * 1.5)
+                blackjack_winnings = int(self.current_bet * self.house_rules["blackjack_payout"])
                 self.bankroll += blackjack_winnings
-                self.message = f"Blackjack! You win ${blackjack_winnings} (3:2 payout)"
+                payout_str = "3:2" if self.house_rules["blackjack_payout"] == 1.5 else "6:5"
+                self.message = f"Blackjack! You win ${blackjack_winnings} ({payout_str} payout)"
+                self.stats["hands_won"] += 1
+
+            self._update_bankroll_stats()
             self.game_state = "finished"
         else:
+            # Check for dealer blackjack (when showing Ace or 10-value)
+            dealer_up_card = self.dealer_hand[0]
+            should_check_dealer_bj = (
+                dealer_up_card.rank == "A" or
+                dealer_up_card.rank in ["10", "J", "Q", "K"]
+            )
+
+            if should_check_dealer_bj:
+                dealer_value = calculate_hand_value(self.dealer_hand)
+                if dealer_value == 21:
+                    # Dealer has blackjack - hand ends immediately
+                    self.running_count += self.dealer_hand[1].get_count_value()
+                    self.bankroll -= self.current_bet
+                    self.message = "Dealer has blackjack! You lose"
+                    self.stats["hands_played"] += 1
+                    self.stats["hands_lost"] += 1
+                    self._update_bankroll_stats()
+                    self.game_state = "finished"
+                    return
+
+            # No dealer blackjack - proceed to playing
             self.game_state = "playing"
-            self.message = "Make your move"
+            self.can_surrender = self.house_rules["surrender_allowed"]  # Respect house rule
+
+            # Check if insurance should be offered (dealer shows Ace)
+            if self.dealer_hand[0].rank == "A" and self.house_rules["insurance_allowed"]:
+                self.offered_insurance = True
+                self.message = "Dealer shows Ace - Insurance available"
+            else:
+                self.message = "Make your move"
 
     def hit(self):
         """Player hits (takes another card)."""
+        self.can_surrender = False  # Can't surrender after taking a card
+        self.offered_insurance = False  # Can't take insurance after hitting
+
         if self.is_split:
             card = self.deck.pop(0)
             self.split_hands[self.active_split_hand].append(card)
@@ -235,6 +338,9 @@ class BlackjackGame:
 
     def stand(self):
         """Player stands (ends turn)."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.is_split and self.active_split_hand == 0:
             self.active_split_hand = 1
             self.message = "Playing hand 2"
@@ -255,6 +361,9 @@ class BlackjackGame:
 
     def double_down(self):
         """Player doubles down."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.is_split:
             total_exposure = self._calculate_split_double_exposure()
             if total_exposure > self.bankroll:
@@ -266,6 +375,8 @@ class BlackjackGame:
                 self.message = "Insufficient funds to double!"
                 return
             self.hand_doubled = True
+
+        self.stats["doubles"] += 1
 
         if self.is_split:
             card = self.deck.pop(0)
@@ -298,12 +409,19 @@ class BlackjackGame:
 
     def split(self):
         """Player splits their hand."""
+        self.can_surrender = False
+        self.offered_insurance = False
+
         if self.current_bet * 2 > self.bankroll:
             self.message = "Insufficient funds to split!"
             return
 
         self.is_split = True
         self.split_hands = [[self.player_hand[0]], [self.player_hand[1]]]
+        self.stats["splits"] += 1
+
+        # Check if splitting Aces (special rule: one card only, no further actions)
+        self.split_aces = self.player_hand[0].rank == "A"
 
         for i in range(2):
             card = self.deck.pop(0)
@@ -311,14 +429,92 @@ class BlackjackGame:
             self.running_count += card.get_count_value()
             self.cards_dealt += 1
 
-        self.active_split_hand = 0
-        self.message = "Playing hand 1"
+        if self.split_aces:
+            # Split Aces: automatically go to dealer play (no hitting allowed)
+            self.message = "Split Aces - one card each"
+            self.game_state = "dealer"
+            self.dealer_play()
+        else:
+            self.active_split_hand = 0
+            self.message = "Playing hand 1"
+
+    def take_insurance(self):
+        """Player takes insurance bet."""
+        insurance_cost = self.current_bet // 2
+        if insurance_cost > self.bankroll:
+            self.message = "Insufficient funds for insurance!"
+            return
+
+        self.insurance_bet = insurance_cost
+        self.bankroll -= insurance_cost
+        self.offered_insurance = False
+        self.stats["insurance_taken"] += 1
+
+        # Check if dealer has blackjack
+        dealer_value = calculate_hand_value(self.dealer_hand)
+        self.running_count += self.dealer_hand[1].get_count_value()
+
+        if dealer_value == 21:
+            # Insurance pays 2:1
+            insurance_payout = insurance_cost * 3  # Original bet + 2:1 payout
+            self.bankroll += insurance_payout
+            self.message = f"Dealer blackjack! Insurance pays ${insurance_cost * 2}"
+            self.stats["hands_played"] += 1
+            self.stats["hands_lost"] += 1  # Lost main bet
+            self._update_bankroll_stats()
+            self.game_state = "finished"
+        else:
+            self.message = f"No dealer blackjack. Lost ${insurance_cost} insurance"
+            self._update_bankroll_stats()
+
+    def decline_insurance(self):
+        """Player declines insurance."""
+        self.offered_insurance = False
+        self.message = "Insurance declined. Make your move"
+
+    def surrender(self):
+        """Player surrenders, losing half their bet."""
+        self.can_surrender = False
+        self.bankroll -= self.current_bet // 2
+        self.running_count += self.dealer_hand[1].get_count_value()
+        self.message = f"Surrendered. Lost ${self.current_bet // 2}"
+        self.stats["hands_played"] += 1
+        self.stats["surrenders"] += 1
+        self.stats["hands_lost"] += 1
+        self._update_bankroll_stats()
+        self.game_state = "finished"
+
+    def _is_soft_hand(self, hand: List[Card], value: int) -> bool:
+        """Check if a hand is soft (has Ace counted as 11)."""
+        has_ace = any(card.rank == "A" for card in hand)
+        if not has_ace or value > 21:
+            return False
+        # Calculate value with all aces as 1
+        sum_aces_as_one = sum(
+            1 if card.rank == "A" else (10 if card.rank in ["J", "Q", "K"] else int(card.rank))
+            for card in hand
+        )
+        # If adding 10 to this sum equals the hand value, an ace is counted as 11
+        return (sum_aces_as_one + 10) == value
 
     def dealer_play(self):
         """Dealer plays their hand."""
         self.running_count += self.dealer_hand[1].get_count_value()
 
-        while calculate_hand_value(self.dealer_hand) < 17:
+        while True:
+            dealer_value = calculate_hand_value(self.dealer_hand)
+
+            # Dealer must hit on 16 or less
+            if dealer_value < 17:
+                pass  # Continue to hit
+            # Check soft 17 rule
+            elif dealer_value == 17 and self.house_rules["dealer_hits_soft_17"]:
+                if not self._is_soft_hand(self.dealer_hand, dealer_value):
+                    break  # Hard 17, dealer stands
+                # Soft 17, dealer hits
+            else:
+                break  # 18+ or hard 17 with standard rules
+
             pygame.time.wait(500)
             card = self.deck.pop(0)
             self.dealer_hand.append(card)
@@ -336,6 +532,9 @@ class BlackjackGame:
         if self.is_split:
             total_win = 0
             results = []
+            wins = 0
+            losses = 0
+            pushes = 0
 
             for i in range(2):
                 hand_value = calculate_hand_value(self.split_hands[i])
@@ -344,39 +543,64 @@ class BlackjackGame:
                 if hand_value > 21:
                     results.append(f"Hand {i+1}: Bust")
                     total_win -= hand_bet
+                    losses += 1
                 elif dealer_value > 21:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    wins += 1
                 elif hand_value > dealer_value:
                     results.append(f"Hand {i+1}: Win")
                     total_win += hand_bet
+                    wins += 1
                 elif hand_value < dealer_value:
                     results.append(f"Hand {i+1}: Loss")
                     total_win -= hand_bet
+                    losses += 1
                 else:
                     results.append(f"Hand {i+1}: Push")
+                    pushes += 1
 
             self.bankroll += total_win
             self.message = (
                 " | ".join(results) + f" | Net: {'+' if total_win >= 0 else ''}${total_win}"
             )
+
+            # Update statistics for split hands
+            self.stats["hands_played"] += 1
+            self.stats["hands_won"] += wins
+            self.stats["hands_lost"] += losses
+            self.stats["hands_pushed"] += pushes
         else:
             player_value = calculate_hand_value(self.player_hand)
             actual_bet = self.current_bet * 2 if self.hand_doubled else self.current_bet
 
+            self.stats["hands_played"] += 1
+
             if dealer_value > 21:
                 self.message = f"Dealer busts! You win with {player_value}!"
                 self.bankroll += actual_bet
+                self.stats["hands_won"] += 1
             elif player_value > dealer_value:
                 self.message = f"You win! {player_value} beats {dealer_value}"
                 self.bankroll += actual_bet
+                self.stats["hands_won"] += 1
             elif player_value < dealer_value:
                 self.message = f"Dealer wins. {dealer_value} beats {player_value}"
                 self.bankroll -= actual_bet
+                self.stats["hands_lost"] += 1
             else:
                 self.message = f"Push! Both have {player_value}"
+                self.stats["hands_pushed"] += 1
 
+        self._update_bankroll_stats()
         self.game_state = "finished"
+
+    def _update_bankroll_stats(self):
+        """Update highest/lowest bankroll statistics."""
+        if self.bankroll > self.stats["highest_bankroll"]:
+            self.stats["highest_bankroll"] = self.bankroll
+        if self.bankroll < self.stats["lowest_bankroll"]:
+            self.stats["lowest_bankroll"] = self.bankroll
 
     def start_new_hand(self):
         """Start a new hand."""
@@ -389,7 +613,11 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.split_aces = False
         self.hand_doubled = False
+        self.insurance_bet = 0
+        self.offered_insurance = False
+        self.can_surrender = False
         self.game_state = "betting"
         self.message = "Place your bet to start"
 
@@ -513,6 +741,133 @@ class BlackjackGame:
             text_surf = font.render(text, True, color)
             self.screen.blit(text_surf, (box_x + 30, y_offset))
             y_offset += line_height
+
+    def draw_rules_panel(self):
+        """Draw the house rules panel."""
+        if not self.show_rules:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill(BLACK)
+        self.screen.blit(overlay, (0, 0))
+
+        box_width = 700
+        box_height = 450
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
+
+        title = LARGE_FONT.render("House Rules", True, GOLD)
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, box_y + 30))
+        self.screen.blit(title, title_rect)
+
+        y_offset = box_y + 100
+        line_height = 50
+
+        rules_display = [
+            ("Dealer Hits Soft 17:", "YES" if self.house_rules["dealer_hits_soft_17"] else "NO"),
+            ("Blackjack Payout:", "3:2" if self.house_rules["blackjack_payout"] == 1.5 else "6:5"),
+            ("Double After Split:", "Allowed" if self.house_rules["double_after_split"] else "Not Allowed"),
+            ("Surrender:", "Allowed" if self.house_rules["surrender_allowed"] else "Not Allowed"),
+            ("Insurance:", "Allowed" if self.house_rules["insurance_allowed"] else "Not Allowed"),
+        ]
+
+        for rule_name, rule_value in rules_display:
+            label_surf = MEDIUM_FONT.render(rule_name, True, WHITE)
+            value_color = (0, 200, 0) if "Allowed" in rule_value or rule_value == "YES" or rule_value == "3:2" else (200, 200, 0)
+            value_surf = MEDIUM_FONT.render(rule_value, True, value_color)
+            self.screen.blit(label_surf, (box_x + 80, y_offset))
+            value_rect = value_surf.get_rect(right=box_x + box_width - 80)
+            value_rect.y = y_offset
+            self.screen.blit(value_surf, value_rect)
+            y_offset += line_height
+
+        # Instructions
+        info_text = SMALL_FONT.render("Rules can be modified in the game code (self.house_rules)", True, LIGHT_GRAY)
+        info_rect = info_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 60))
+        self.screen.blit(info_text, info_rect)
+
+        close_text = SMALL_FONT.render("Press ESC or click anywhere to close", True, LIGHT_GRAY)
+        close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 30))
+        self.screen.blit(close_text, close_rect)
+
+    def draw_stats_panel(self):
+        """Draw the statistics panel."""
+        if not self.show_stats:
+            return
+
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill(BLACK)
+        self.screen.blit(overlay, (0, 0))
+
+        box_width = 800
+        box_height = 600
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+
+        pygame.draw.rect(
+            self.screen, DARK_GREEN, (box_x, box_y, box_width, box_height), border_radius=10
+        )
+        pygame.draw.rect(
+            self.screen, GOLD, (box_x, box_y, box_width, box_height), 3, border_radius=10
+        )
+
+        title = LARGE_FONT.render("Session Statistics", True, GOLD)
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, box_y + 30))
+        self.screen.blit(title, title_rect)
+
+        y_offset = box_y + 100
+        line_height = 40
+
+        # Calculate win rate
+        total_completed = self.stats["hands_won"] + self.stats["hands_lost"] + self.stats["hands_pushed"]
+        win_rate = (self.stats["hands_won"] / total_completed * 100) if total_completed > 0 else 0
+
+        # Calculate profit/loss
+        profit_loss = self.bankroll - 1000  # Assuming starting bankroll is 1000
+        profit_color = (0, 200, 0) if profit_loss >= 0 else (200, 0, 0)
+
+        stats_display = [
+            ("Hands Played:", str(self.stats["hands_played"]), WHITE),
+            ("Hands Won:", str(self.stats["hands_won"]), (0, 200, 0)),
+            ("Hands Lost:", str(self.stats["hands_lost"]), (200, 0, 0)),
+            ("Hands Pushed:", str(self.stats["hands_pushed"]), YELLOW),
+            ("Win Rate:", f"{win_rate:.1f}%", GOLD),
+            ("", "", WHITE),
+            ("Blackjacks:", str(self.stats["blackjacks"]), GOLD),
+            ("Doubles:", str(self.stats["doubles"]), WHITE),
+            ("Splits:", str(self.stats["splits"]), WHITE),
+            ("Surrenders:", str(self.stats["surrenders"]), WHITE),
+            ("Insurance Taken:", str(self.stats["insurance_taken"]), WHITE),
+            ("", "", WHITE),
+            ("Current Bankroll:", f"${self.bankroll}", WHITE),
+            ("Highest Bankroll:", f"${self.stats['highest_bankroll']}", (0, 200, 0)),
+            ("Lowest Bankroll:", f"${self.stats['lowest_bankroll']}", (200, 100, 0)),
+            ("Profit/Loss:", f"${profit_loss:+d}", profit_color),
+        ]
+
+        for label, value, color in stats_display:
+            if label:  # Skip empty lines
+                label_surf = MEDIUM_FONT.render(label, True, WHITE)
+                value_surf = MEDIUM_FONT.render(value, True, color)
+                self.screen.blit(label_surf, (box_x + 100, y_offset))
+                value_rect = value_surf.get_rect(right=box_x + box_width - 100)
+                value_rect.y = y_offset
+                self.screen.blit(value_surf, value_rect)
+            y_offset += line_height
+
+        # Close instructions
+        close_text = SMALL_FONT.render("Press ESC or click anywhere to close", True, LIGHT_GRAY)
+        close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height - 40))
+        self.screen.blit(close_text, close_rect)
 
     def draw(self):
         """Draw the entire game screen."""
@@ -650,7 +1005,11 @@ class BlackjackGame:
             # Calculate if player can afford to double
             if self.is_split:
                 total_exposure = self._calculate_split_double_exposure()
-                can_double = len(hand) == 2 and total_exposure <= self.bankroll
+                can_double = (
+                    len(hand) == 2
+                    and total_exposure <= self.bankroll
+                    and self.house_rules["double_after_split"]
+                )
             else:
                 can_double = len(hand) == 2 and self.current_bet * 2 <= self.bankroll
 
@@ -664,16 +1023,35 @@ class BlackjackGame:
             self.double_btn.draw(self.screen)
             self.split_btn.draw(self.screen)
 
+            # Insurance and surrender buttons
+            if self.offered_insurance and self.house_rules["insurance_allowed"]:
+                self.insurance_btn.enabled = self.insurance_bet == 0 and self.current_bet // 2 <= self.bankroll
+                self.insurance_btn.draw(self.screen)
+                self.no_insurance_btn.enabled = True
+                self.no_insurance_btn.draw(self.screen)
+
+            if self.can_surrender and self.house_rules["surrender_allowed"]:
+                self.surrender_btn.enabled = True
+                self.surrender_btn.draw(self.screen)
+
         elif self.game_state == "finished":
             self.new_hand_btn.draw(self.screen)
 
         # Always visible buttons
         self.info_btn.draw(self.screen)
+        self.stats_btn.draw(self.screen)
+        self.rules_btn.draw(self.screen)
         self.new_shoe_btn.draw(self.screen)
 
         # Modals
         if self.show_info:
             self.draw_info_panel()
+
+        if self.show_stats:
+            self.draw_stats_panel()
+
+        if self.show_rules:
+            self.draw_rules_panel()
 
         if self.show_bankroll_edit:
             self.draw_bankroll_modal()
@@ -692,6 +1070,10 @@ class BlackjackGame:
                 if event.key == pygame.K_ESCAPE:
                     if self.show_info:
                         self.show_info = False
+                    elif self.show_stats:
+                        self.show_stats = False
+                    elif self.show_rules:
+                        self.show_rules = False
                     elif self.show_bankroll_edit:
                         self.show_bankroll_edit = False
                     else:
@@ -718,6 +1100,16 @@ class BlackjackGame:
                 self.show_info = False
                 continue
 
+            # Close stats panel on click
+            if event.type == pygame.MOUSEBUTTONDOWN and self.show_stats:
+                self.show_stats = False
+                continue
+
+            # Close rules panel on click
+            if event.type == pygame.MOUSEBUTTONDOWN and self.show_rules:
+                self.show_rules = False
+                continue
+
             # Always-available buttons
             if self.edit_bankroll_btn.handle_event(event):
                 self.show_bankroll_edit = True
@@ -726,6 +1118,14 @@ class BlackjackGame:
 
             if self.info_btn.handle_event(event):
                 self.show_info = not self.show_info
+                continue
+
+            if self.stats_btn.handle_event(event):
+                self.show_stats = not self.show_stats
+                continue
+
+            if self.rules_btn.handle_event(event):
+                self.show_rules = not self.show_rules
                 continue
 
             if self.new_shoe_btn.handle_event(event):
@@ -760,6 +1160,20 @@ class BlackjackGame:
                         self.custom_bet_input.text = ""
 
             elif self.game_state == "playing":
+                # Insurance and surrender have priority
+                if self.offered_insurance:
+                    if self.insurance_btn.handle_event(event):
+                        self.take_insurance()
+                        continue
+                    elif self.no_insurance_btn.handle_event(event):
+                        self.decline_insurance()
+                        continue
+
+                if self.can_surrender and self.surrender_btn.handle_event(event):
+                    self.surrender()
+                    continue
+
+                # Regular action buttons
                 if self.hit_btn.handle_event(event):
                     self.hit()
                 elif self.stand_btn.handle_event(event):
