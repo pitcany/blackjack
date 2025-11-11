@@ -151,6 +151,7 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]  # Track which split hands doubled
+        self.split_aces = False  # Track if Aces were split (special rule: one card only)
 
         # Double down tracking for non-split hands
         self.hand_doubled = False
@@ -364,6 +365,7 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.split_aces = False
         self.hand_doubled = False
         self.insurance_bet = 0
         self.offered_insurance = False
@@ -550,14 +552,23 @@ class BlackjackGame:
         self.split_hands = [[self.player_hand[0]], [self.player_hand[1]]]
         self.stats["splits"] += 1
 
+        # Check if splitting Aces (special rule: one card only, no further actions)
+        self.split_aces = self.player_hand[0].rank == "A"
+
         for i in range(2):
             card = self.deck.pop(0)
             self.split_hands[i].append(card)
             self.running_count += card.get_count_value()
             self.cards_dealt += 1
 
-        self.active_split_hand = 0
-        self.message = "Playing hand 1"
+        if self.split_aces:
+            # Split Aces: automatically go to dealer play (no hitting allowed)
+            self.message = "Split Aces - one card each"
+            self.game_state = 'dealer'
+            self.dealer_play()
+        else:
+            self.active_split_hand = 0
+            self.message = "Playing hand 1"
 
     def take_insurance(self):
         """Player takes insurance bet."""
@@ -703,6 +714,7 @@ class BlackjackGame:
         self.split_hands = [[], []]
         self.active_split_hand = 0
         self.split_doubled = [False, False]
+        self.split_aces = False
         self.hand_doubled = False
         self.insurance_bet = 0
         self.offered_insurance = False
