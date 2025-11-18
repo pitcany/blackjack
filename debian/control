@@ -1,0 +1,27 @@
+Source: blackjack-pro
+Section: games
+Priority: optional
+Maintainer: Blackjack Pro Team <blackjack@example.com>
+Build-Depends: debhelper (>= 10), python3-all (>= 3.7), dh-python
+Standards-Version: 4.5.0
+Homepage: https://github.com/pitcany/blackjack
+Vcs-Git: https://github.com/pitcany/blackjack.git
+Vcs-Browser: https://github.com/pitcany/blackjack
+
+Package: blackjack-pro
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3 (>= 3.7), python3-tk
+Description: Professional Blackjack card counting training simulator
+ Blackjack Pro is a comprehensive desktop application for learning and
+ practicing Blackjack with integrated card counting simulation.
+ .
+ Features:
+  * Multiple card counting systems (Hi-Lo, KO, Omega II)
+  * Deviation indices (Illustrious 18 + Fab Four)
+  * Real-time basic strategy recommendations
+  * Save/Load game sessions
+  * CSV statistics export
+  * Professional training features
+ .
+ Perfect for learning optimal Blackjack strategy and card counting
+ techniques in a safe, educational environment.

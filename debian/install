@@ -1,0 +1,6 @@
+src/* usr/lib/python3/dist-packages/blackjack-pro/src/
+tests/* usr/lib/python3/dist-packages/blackjack-pro/tests/
+main.py usr/lib/python3/dist-packages/blackjack-pro/
+main_pro.py usr/lib/python3/dist-packages/blackjack-pro/
+debian/blackjack.desktop usr/share/applications/
+debian/blackjack-pro.desktop usr/share/applications/

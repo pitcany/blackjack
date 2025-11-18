@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blackjack Card Counter
+GenericName=Card Counting Trainer
+Comment=Learn Blackjack and card counting with Hi-Lo system
+Exec=blackjack
+Icon=applications-games
+Terminal=false
+Categories=Game;Education;
+Keywords=blackjack;casino;cards;counting;training;
+StartupNotify=true

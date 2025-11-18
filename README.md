@@ -62,29 +62,48 @@ python main_pro.py
 
 ## Installation
 
+### Quick Start (No Installation)
+```bash
+# Clone and run directly
+git clone <repository-url>
+cd blackjack
+
+# Standard version
+python main.py
+
+# Pro version (recommended)
+python main_pro.py
+```
+
+### Package Installation
+
+**Python Package (pip):**
+```bash
+# Install from source
+pip install .
+
+# Run from anywhere
+blackjack          # Standard version
+blackjack-pro      # Pro version
+```
+
+**Debian/Ubuntu Package:**
+```bash
+# Build .deb package
+./build-deb.sh
+
+# Install system-wide
+sudo dpkg -i ../blackjack-pro_*.deb
+
+# Launch from applications menu or terminal
+blackjack-pro
+```
+
+**See [INSTALL.md](INSTALL.md) for detailed installation instructions.**
+
 ### Prerequisites
 - Python 3.7 or higher
-- Tkinter (usually comes with Python)
-
-### Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd blackjack
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   Note: This project uses only Python standard library, so no external packages are required.
-
-3. **Run the game:**
-   ```bash
-   python main.py
-   ```
+- Tkinter (usually comes with Python; `python3-tk` on Linux)
 
 ## Usage
 

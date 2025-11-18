@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blackjack Pro
+GenericName=Professional Card Counting Trainer
+Comment=Advanced Blackjack training with multiple counting systems and deviation indices
+Exec=blackjack-pro
+Icon=applications-games
+Terminal=false
+Categories=Game;Education;
+Keywords=blackjack;casino;cards;counting;training;professional;
+StartupNotify=true
