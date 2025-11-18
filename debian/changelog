@@ -1,0 +1,31 @@
+blackjack-pro (2.0.1) unstable; urgency=medium
+
+  * UI improvements: Better button contrast and configurable starting balance
+  * Changed action button colors from green to blue for better visibility
+  * Added Settings menu option to configure starting balance
+  * All improvements in both standard and pro versions
+
+ -- Blackjack Pro Team <blackjack@example.com>  Mon, 18 Nov 2024 20:00:00 +0000
+
+blackjack-pro (2.0.0) unstable; urgency=medium
+
+  * Major update: Professional features added
+  * Multiple counting systems (Hi-Lo, KO, Omega II)
+  * Deviation indices (Illustrious 18 + Fab Four)
+  * Save/Load game sessions with JSON persistence
+  * CSV statistics export for analysis
+  * Enhanced GUI with menu system
+  * Advanced analytics and advantage display
+
+ -- Blackjack Pro Team <blackjack@example.com>  Mon, 18 Nov 2024 19:00:00 +0000
+
+blackjack-pro (1.0.0) unstable; urgency=low
+
+  * Initial release
+  * Full Blackjack game implementation
+  * Hi-Lo card counting system
+  * Basic strategy engine
+  * Tkinter GUI with card visualization
+  * Session statistics tracking
+
+ -- Blackjack Pro Team <blackjack@example.com>  Mon, 18 Nov 2024 18:00:00 +0000

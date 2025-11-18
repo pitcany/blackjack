@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blackjack-pro"
+version = "2.0.0"
+description = "Professional Blackjack card counting training simulator"
+readme = "README.md"
+authors = [
+    {name = "Blackjack Pro Team"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Topic :: Games/Entertainment :: Board Games",
+    "Topic :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+keywords = ["blackjack", "card-counting", "casino", "training", "simulator", "education"]
+requires-python = ">=3.7"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "mypy>=0.950",
+]
+
+[project.urls]
+Homepage = "https://github.com/pitcany/blackjack"
+Documentation = "https://github.com/pitcany/blackjack/blob/main/README_PRO.md"
+Repository = "https://github.com/pitcany/blackjack"
+"Bug Tracker" = "https://github.com/pitcany/blackjack/issues"
+
+[project.scripts]
+blackjack = "src.gui:main"
+blackjack-pro = "src.gui_enhanced:main"
+blackjack-standard = "src.gui:main"
+
+[tool.setuptools]
+packages = ["src", "tests"]
+
+[tool.setuptools.package-data]
+src = ["*.py"]
+tests = ["*.py"]
+
+[tool.black]
+line-length = 100
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

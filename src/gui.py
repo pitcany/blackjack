@@ -28,7 +28,8 @@ class BlackjackGUI:
         self.bg_color = "#0D5C0D"  # Green felt
         self.card_bg = "#FFFFFF"
         self.text_color = "#FFFFFF"
-        self.button_color = "#4CAF50"
+        self.button_color = "#2E7D32"  # Darker green for better contrast
+        self.action_button_color = "#1565C0"  # Blue for main action buttons
 
         self._setup_ui()
         self.update_display()
@@ -209,14 +210,14 @@ class BlackjackGUI:
         # Row 1
         self.hit_btn = tk.Button(buttons_grid, text="HIT",
                                 command=self.hit,
-                                bg=self.button_color, fg=self.text_color,
+                                bg=self.action_button_color, fg=self.text_color,
                                 font=('Arial', 11, 'bold'),
                                 width=12, height=2)
         self.hit_btn.grid(row=0, column=0, padx=5, pady=5)
 
         self.stand_btn = tk.Button(buttons_grid, text="STAND",
                                   command=self.stand,
-                                  bg=self.button_color, fg=self.text_color,
+                                  bg=self.action_button_color, fg=self.text_color,
                                   font=('Arial', 11, 'bold'),
                                   width=12, height=2)
         self.stand_btn.grid(row=0, column=1, padx=5, pady=5)
@@ -224,14 +225,14 @@ class BlackjackGUI:
         # Row 2
         self.double_btn = tk.Button(buttons_grid, text="DOUBLE DOWN",
                                    command=self.double_down,
-                                   bg=self.button_color, fg=self.text_color,
+                                   bg=self.action_button_color, fg=self.text_color,
                                    font=('Arial', 11, 'bold'),
                                    width=12, height=2)
         self.double_btn.grid(row=1, column=0, padx=5, pady=5)
 
         self.split_btn = tk.Button(buttons_grid, text="SPLIT",
                                   command=self.split,
-                                  bg=self.button_color, fg=self.text_color,
+                                  bg=self.action_button_color, fg=self.text_color,
                                   font=('Arial', 11, 'bold'),
                                   width=12, height=2)
         self.split_btn.grid(row=1, column=1, padx=5, pady=5)

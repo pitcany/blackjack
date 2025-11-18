@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_test:
+	# Run tests if available
+	python3 -m pytest tests/ || true
+
+override_dh_installdocs:
+	dh_installdocs
+	# Install additional documentation
+	install -m 644 README_PRO.md debian/blackjack-pro/usr/share/doc/blackjack-pro/
+	install -m 644 CHANGELOG_UI.md debian/blackjack-pro/usr/share/doc/blackjack-pro/

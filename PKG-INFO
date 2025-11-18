@@ -1,0 +1,37 @@
+Metadata-Version: 2.1
+Name: blackjack-pro
+Version: 2.0.0
+Summary: Professional Blackjack card counting training simulator
+Home-page: https://github.com/pitcany/blackjack
+Author: Blackjack Pro Team
+License: MIT
+Keywords: blackjack,card-counting,casino,training,simulator,education
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Education
+Classifier: Topic :: Games/Entertainment :: Board Games
+Classifier: Topic :: Education
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+
+# Blackjack Pro
+
+Professional Blackjack card counting training simulator with multiple counting systems,
+deviation indices, and advanced features.
+
+## Quick Installation
+
+```bash
+pip install blackjack-pro
+blackjack-pro
+```
+
+See INSTALL.md for detailed installation instructions.
