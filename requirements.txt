@@ -1,0 +1,23 @@
+# Blackjack Game with Card Counting - Requirements
+#
+# This project uses only Python standard library modules.
+# No external packages are required.
+#
+# Minimum Python version: 3.7
+#
+# Standard library modules used:
+# - tkinter (GUI - usually included with Python)
+# - random (deck shuffling)
+# - enum (enums for game states, actions, etc.)
+# - typing (type hints)
+# - unittest (testing framework)
+#
+# If you're on Linux and tkinter is not installed:
+# Ubuntu/Debian: sudo apt-get install python3-tk
+# Fedora: sudo dnf install python3-tkinter
+# Arch: sudo pacman -S tk
+#
+# For development/testing (optional):
+# pytest>=7.0.0  # Alternative test runner (optional)
+# mypy>=0.950    # Type checking (optional)
+# black>=22.0.0  # Code formatting (optional)
