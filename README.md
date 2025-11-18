@@ -3,7 +3,28 @@
 A comprehensive desktop application for playing Blackjack with integrated card counting simulation and basic strategy guidance.
 
 ![Python Version](https://img.shields.io/badge/python-3.7%2B-blue)
+![Version](https://img.shields.io/badge/version-2.0-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+## 🆕 Blackjack Pro Version Available!
+
+**NEW:** Advanced features now available in `main_pro.py`:
+- 🎯 **Multiple Counting Systems** (Hi-Lo, KO, Omega II)
+- 📊 **Deviation Indices** (Illustrious 18 + Fab Four)
+- 💾 **Save/Load Game Sessions**
+- 📈 **CSV Statistics Export**
+- 🎓 **Professional Training Features**
+
+See [README_PRO.md](README_PRO.md) for full documentation.
+
+### Quick Start
+```bash
+# Standard version (this file)
+python main.py
+
+# Pro version with advanced features
+python main_pro.py
+```
 
 ## Features
 
