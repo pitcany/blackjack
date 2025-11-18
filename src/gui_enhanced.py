@@ -40,8 +40,12 @@ class EnhancedBlackjackGUI:
         self.bg_color = "#0D5C0D"
         self.card_bg = "#FFFFFF"
         self.text_color = "#FFFFFF"
-        self.button_color = "#4CAF50"
+        self.button_color = "#2E7D32"  # Darker green for better contrast
+        self.action_button_color = "#1565C0"  # Blue for main action buttons
         self.accent_color = "#FFD700"
+
+        # Starting balance (can be configured)
+        self.starting_balance = 1000
 
         self._create_menu()
         self._setup_ui()
@@ -84,6 +88,9 @@ class EnhancedBlackjackGUI:
             variable=self.use_deviations,
             command=self.update_display
         )
+
+        settings_menu.add_separator()
+        settings_menu.add_command(label="Set Starting Balance", command=self.set_starting_balance)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -289,14 +296,14 @@ class EnhancedBlackjackGUI:
         # Row 1
         self.hit_btn = tk.Button(buttons_grid, text="HIT",
                                 command=self.hit,
-                                bg=self.button_color, fg=self.text_color,
+                                bg=self.action_button_color, fg=self.text_color,
                                 font=('Arial', 11, 'bold'),
                                 width=12, height=2)
         self.hit_btn.grid(row=0, column=0, padx=5, pady=5)
 
         self.stand_btn = tk.Button(buttons_grid, text="STAND",
                                   command=self.stand,
-                                  bg=self.button_color, fg=self.text_color,
+                                  bg=self.action_button_color, fg=self.text_color,
                                   font=('Arial', 11, 'bold'),
                                   width=12, height=2)
         self.stand_btn.grid(row=0, column=1, padx=5, pady=5)
@@ -304,14 +311,14 @@ class EnhancedBlackjackGUI:
         # Row 2
         self.double_btn = tk.Button(buttons_grid, text="DOUBLE DOWN",
                                    command=self.double_down,
-                                   bg=self.button_color, fg=self.text_color,
+                                   bg=self.action_button_color, fg=self.text_color,
                                    font=('Arial', 11, 'bold'),
                                    width=12, height=2)
         self.double_btn.grid(row=1, column=0, padx=5, pady=5)
 
         self.split_btn = tk.Button(buttons_grid, text="SPLIT",
                                   command=self.split,
-                                  bg=self.button_color, fg=self.text_color,
+                                  bg=self.action_button_color, fg=self.text_color,
                                   font=('Arial', 11, 'bold'),
                                   width=12, height=2)
         self.split_btn.grid(row=1, column=1, padx=5, pady=5)
@@ -410,6 +417,73 @@ class EnhancedBlackjackGUI:
         self.update_display()
         messagebox.showinfo("Counting System",
                            f"Changed to {system.value}\nDeck has been reset.")
+
+    def set_starting_balance(self):
+        """Set the starting balance for new games."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Set Starting Balance")
+        dialog.geometry("350x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Set Starting Balance",
+                font=('Arial', 14, 'bold')).pack(pady=15)
+
+        tk.Label(dialog, text="Enter the starting balance for new games:",
+                font=('Arial', 10)).pack(pady=5)
+
+        # Balance entry
+        entry_frame = tk.Frame(dialog)
+        entry_frame.pack(pady=10)
+
+        tk.Label(entry_frame, text="$", font=('Arial', 12)).pack(side=tk.LEFT)
+
+        balance_var = tk.StringVar(value=str(self.starting_balance))
+        balance_entry = tk.Entry(entry_frame, textvariable=balance_var,
+                                font=('Arial', 12), width=10)
+        balance_entry.pack(side=tk.LEFT, padx=5)
+        balance_entry.focus()
+        balance_entry.select_range(0, tk.END)
+
+        def save_balance():
+            try:
+                new_balance = int(balance_var.get())
+                if new_balance < 100:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance must be at least $100")
+                    return
+                if new_balance > 1000000:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance cannot exceed $1,000,000")
+                    return
+
+                self.starting_balance = new_balance
+                dialog.destroy()
+
+                # Ask if user wants to reset current game
+                if messagebox.askyesno("Reset Game?",
+                                      f"Starting balance set to ${new_balance}\n\n"
+                                      "Reset current game with new balance?"):
+                    self.game.player_balance = new_balance
+                    self.game.reset_round()
+                    self.update_display()
+                    messagebox.showinfo("Game Reset",
+                                      f"Game reset with ${new_balance} balance")
+
+            except ValueError:
+                messagebox.showerror("Invalid Input",
+                                   "Please enter a valid number")
+
+        # Buttons
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Save", command=save_balance,
+                 font=('Arial', 11, 'bold'), width=10,
+                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
+                 font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
 
     def show_counting_help(self):
         """Show counting systems help."""
