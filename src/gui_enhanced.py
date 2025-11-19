@@ -91,6 +91,7 @@ class EnhancedBlackjackGUI:
 
         settings_menu.add_separator()
         settings_menu.add_command(label="Set Starting Balance", command=self.set_starting_balance)
+        settings_menu.add_command(label="Set Number of Decks", command=self.set_num_decks_dialog)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -167,6 +168,11 @@ class EnhancedBlackjackGUI:
                                           bg=self.bg_color, fg=self.text_color,
                                           font=('Arial', 10))
         self.count_status_label.pack(pady=2)
+
+        self.deck_count_label = tk.Label(count_frame, text="Decks in Shoe: 6",
+                                         bg=self.bg_color, fg=self.text_color,
+                                         font=('Arial', 10))
+        self.deck_count_label.pack(pady=2)
 
         # Right: Bet Suggestion
         bet_frame = tk.LabelFrame(top_frame, text="Betting",
@@ -485,6 +491,87 @@ class EnhancedBlackjackGUI:
         tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
                  font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
 
+    def set_num_decks_dialog(self):
+        """Open dialog to set number of decks."""
+        # Check if can change settings
+        if self.game.state != GameState.WAITING_FOR_BET:
+            messagebox.showerror("Cannot Change Settings",
+                               "Cannot change deck settings during an active round.\n\n"
+                               "Please finish or stand on the current round first.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Set Number of Decks")
+        dialog.geometry("400x280")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Set Number of Decks",
+                font=('Arial', 14, 'bold')).pack(pady=15)
+
+        tk.Label(dialog, text="Select the number of decks in the shoe:",
+                font=('Arial', 10)).pack(pady=5)
+
+        # Deck count selector
+        deck_frame = tk.Frame(dialog)
+        deck_frame.pack(pady=10)
+
+        tk.Label(deck_frame, text="Decks:", font=('Arial', 12)).pack(side=tk.LEFT, padx=5)
+
+        deck_var = tk.IntVar(value=self.game.get_num_decks())
+        deck_spinbox = tk.Spinbox(deck_frame, from_=1, to=8,
+                                 textvariable=deck_var,
+                                 font=('Arial', 12), width=5,
+                                 state='readonly')
+        deck_spinbox.pack(side=tk.LEFT, padx=5)
+
+        # Warning message
+        warning_frame = tk.Frame(dialog, bg="#FFF9C4", relief=tk.RIDGE, bd=2)
+        warning_frame.pack(pady=15, padx=20, fill=tk.X)
+
+        tk.Label(warning_frame, text="⚠ Warning",
+                font=('Arial', 10, 'bold'),
+                bg="#FFF9C4").pack(pady=(5, 0))
+
+        tk.Label(warning_frame,
+                text="Changing the number of decks will:\n"
+                     "• Shuffle a new shoe\n"
+                     "• Reset the card count to 0\n"
+                     "• Preserve your balance and statistics",
+                font=('Arial', 9),
+                bg="#FFF9C4",
+                justify=tk.LEFT).pack(pady=(0, 5), padx=10)
+
+        def save_deck_count():
+            new_deck_count = deck_var.get()
+
+            if new_deck_count == self.game.get_num_decks():
+                dialog.destroy()
+                return
+
+            success = self.game.set_num_decks(new_deck_count)
+
+            if success:
+                dialog.destroy()
+                self.update_display()
+                messagebox.showinfo("Deck Count Updated",
+                                  f"Number of decks set to {new_deck_count}\n\n"
+                                  f"A fresh shoe has been shuffled and the count reset.")
+            else:
+                messagebox.showerror("Error",
+                                   "Failed to update deck count. Please try again.")
+
+        # Buttons
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Save", command=save_deck_count,
+                 font=('Arial', 11, 'bold'), width=10,
+                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
+                 font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
+
     def show_counting_help(self):
         """Show counting systems help."""
         help_text = """Card Counting Systems:
@@ -573,6 +660,9 @@ For educational purposes only."""
         )
         self.count_status_label.config(
             text=f"Status: {self.game.counter.get_count_status()}"
+        )
+        self.deck_count_label.config(
+            text=f"Decks in Shoe: {self.game.get_num_decks()}"
         )
 
         # Update betting info

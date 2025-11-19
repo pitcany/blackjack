@@ -77,6 +77,13 @@ class BlackjackGUI:
                                       font=('Arial', 10))
         self.winrate_label.pack(pady=2)
 
+        # Settings button
+        self.settings_btn = tk.Button(stats_frame, text="Game Settings",
+                                      command=self.open_settings,
+                                      bg=self.button_color, fg=self.text_color,
+                                      font=('Arial', 9), width=12)
+        self.settings_btn.pack(pady=2)
+
         # Right: Card Counting
         count_frame = tk.LabelFrame(top_frame, text="Card Counting (Hi-Lo)",
                                    bg=self.bg_color, fg=self.text_color,
@@ -102,6 +109,11 @@ class BlackjackGUI:
                                            bg=self.bg_color, fg="#FFD700",
                                            font=('Arial', 10, 'bold'))
         self.suggested_bet_label.pack(pady=2)
+
+        self.deck_count_label = tk.Label(count_frame, text="Decks in Shoe: 6",
+                                         bg=self.bg_color, fg=self.text_color,
+                                         font=('Arial', 10))
+        self.deck_count_label.pack(pady=2)
 
     def _create_game_area(self, parent):
         """Create the main game playing area."""
@@ -306,6 +318,11 @@ class BlackjackGUI:
             text=f"Suggested Bet: ${suggested_bet}"
         )
 
+        # Update deck count
+        self.deck_count_label.config(
+            text=f"Decks in Shoe: {self.game.get_num_decks()}"
+        )
+
         # Update cards display
         self._update_cards_display()
 
@@ -404,6 +421,10 @@ class BlackjackGUI:
         can_new_round = self.game.state == GameState.ROUND_OVER
         self.new_round_btn.config(state=tk.NORMAL if can_new_round else tk.DISABLED)
 
+        # Settings button (only between rounds)
+        can_change_settings = self.game.state == GameState.WAITING_FOR_BET
+        self.settings_btn.config(state=tk.NORMAL if can_change_settings else tk.DISABLED)
+
     def set_bet(self, amount: int):
         """Set the bet amount.
 
@@ -461,6 +482,88 @@ class BlackjackGUI:
     def new_round(self):
         """Start a new round."""
         self.game.reset_round()
+
+    def open_settings(self):
+        """Open game settings dialog."""
+        # Check if can change settings
+        if self.game.state != GameState.WAITING_FOR_BET:
+            messagebox.showerror("Cannot Change Settings",
+                               "Cannot change settings during an active round")
+            return
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Game Settings")
+        dialog.geometry("400x250")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Header
+        tk.Label(dialog, text="Game Settings",
+                font=('Arial', 14, 'bold')).pack(pady=15)
+
+        # Current deck count
+        current_decks = self.game.get_num_decks()
+        tk.Label(dialog, text=f"Current Decks: {current_decks}",
+                font=('Arial', 11)).pack(pady=5)
+
+        # Deck selection
+        tk.Label(dialog, text="Select number of decks (1-8):",
+                font=('Arial', 10)).pack(pady=5)
+
+        # Spinbox for deck selection
+        deck_frame = tk.Frame(dialog)
+        deck_frame.pack(pady=10)
+
+        deck_var = tk.IntVar(value=current_decks)
+        deck_spinbox = tk.Spinbox(deck_frame, from_=1, to=8,
+                                  textvariable=deck_var,
+                                  font=('Arial', 12), width=10)
+        deck_spinbox.pack()
+
+        # Warning message
+        warning_label = tk.Label(dialog,
+                                text="⚠ Changing decks will shuffle a new shoe\nand reset the card count",
+                                font=('Arial', 9), fg="#FF8C00")
+        warning_label.pack(pady=10)
+
+        def save_settings():
+            try:
+                new_decks = deck_var.get()
+
+                # Validate range
+                if not (1 <= new_decks <= 8):
+                    messagebox.showerror("Invalid Selection",
+                                       "Please select 1-8 decks")
+                    return
+
+                # Apply changes
+                if self.game.set_num_decks(new_decks):
+                    dialog.destroy()
+                    self.update_display()
+                    messagebox.showinfo("Settings Updated",
+                                      f"Game settings updated.\n"
+                                      f"New shoe shuffled with {new_decks} deck(s).\n"
+                                      f"Card count reset.")
+                else:
+                    messagebox.showerror("Error",
+                                       "Failed to update settings.\n"
+                                       "Cannot change during active round.")
+
+            except tk.TclError:
+                messagebox.showerror("Invalid Input",
+                                   "Please enter a valid number")
+
+        # Buttons
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Save", command=save_settings,
+                 font=('Arial', 11, 'bold'), width=10,
+                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
+                 font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
 
     def run(self):
         """Run the GUI main loop."""

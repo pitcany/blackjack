@@ -192,6 +192,115 @@ class TestBlackjackGame(unittest.TestCase):
                 # This is validated in the _dealer_play method
                 pass
 
+    def test_get_num_decks(self):
+        """Test getting the number of decks."""
+        self.assertEqual(self.game.get_num_decks(), 6)
+
+    def test_set_num_decks_valid_range(self):
+        """Test setting number of decks within valid range (1-8)."""
+        for num_decks in range(1, 9):
+            success = self.game.set_num_decks(num_decks)
+            self.assertTrue(success, f"Failed to set {num_decks} decks")
+            self.assertEqual(self.game.get_num_decks(), num_decks)
+
+    def test_set_num_decks_below_minimum(self):
+        """Test setting number of decks below minimum (< 1)."""
+        success = self.game.set_num_decks(0)
+        self.assertFalse(success)
+        self.assertEqual(self.game.get_num_decks(), 6)  # Should remain unchanged
+
+        success = self.game.set_num_decks(-1)
+        self.assertFalse(success)
+        self.assertEqual(self.game.get_num_decks(), 6)
+
+    def test_set_num_decks_above_maximum(self):
+        """Test setting number of decks above maximum (> 8)."""
+        success = self.game.set_num_decks(9)
+        self.assertFalse(success)
+        self.assertEqual(self.game.get_num_decks(), 6)  # Should remain unchanged
+
+        success = self.game.set_num_decks(100)
+        self.assertFalse(success)
+        self.assertEqual(self.game.get_num_decks(), 6)
+
+    def test_set_num_decks_during_active_round(self):
+        """Test that deck count cannot be changed during an active round."""
+        # Place a bet to start a round
+        self.game.place_bet(50)
+
+        # Try to change deck count during player turn
+        if self.game.state == GameState.PLAYER_TURN:
+            success = self.game.set_num_decks(4)
+            self.assertFalse(success)
+            self.assertEqual(self.game.get_num_decks(), 6)  # Should remain unchanged
+
+    def test_set_num_decks_preserves_balance(self):
+        """Test that changing deck count preserves player balance."""
+        initial_balance = 1000
+        self.game.player_balance = 1500  # Change balance
+
+        success = self.game.set_num_decks(4)
+        self.assertTrue(success)
+        self.assertEqual(self.game.player_balance, 1500)  # Balance preserved
+
+    def test_set_num_decks_preserves_statistics(self):
+        """Test that changing deck count preserves game statistics."""
+        # Play a round to generate some statistics
+        self.game.place_bet(50)
+
+        # Complete the round
+        if self.game.state == GameState.PLAYER_TURN:
+            self.game.stand()
+
+        # Save statistics
+        rounds_played = self.game.rounds_played
+        rounds_won = self.game.rounds_won
+        rounds_lost = self.game.rounds_lost
+        total_wagered = self.game.total_wagered
+
+        # Ensure we're in a state where we can change decks
+        if self.game.state == GameState.ROUND_OVER:
+            self.game.reset_round()
+
+        # Change deck count
+        success = self.game.set_num_decks(4)
+        self.assertTrue(success)
+
+        # Verify statistics are preserved
+        self.assertEqual(self.game.rounds_played, rounds_played)
+        self.assertEqual(self.game.rounds_won, rounds_won)
+        self.assertEqual(self.game.rounds_lost, rounds_lost)
+        self.assertEqual(self.game.total_wagered, total_wagered)
+
+    def test_set_num_decks_resets_count(self):
+        """Test that changing deck count resets the card counter."""
+        # Manually set a non-zero count
+        self.game.counter.running_count = 10
+
+        # Change deck count
+        success = self.game.set_num_decks(4)
+        self.assertTrue(success)
+
+        # Verify count is reset
+        self.assertEqual(self.game.counter.get_running_count(), 0)
+        self.assertEqual(self.game.counter.get_true_count(), 0.0)
+
+    def test_set_num_decks_creates_new_deck(self):
+        """Test that changing deck count creates a new deck with correct size."""
+        # Set to 2 decks
+        success = self.game.set_num_decks(2)
+        self.assertTrue(success)
+
+        # Verify deck has correct number of cards (2 decks × 52 cards = 104)
+        self.assertEqual(len(self.game.deck.cards), 104)
+
+        # Set to 8 decks
+        success = self.game.set_num_decks(8)
+        self.assertTrue(success)
+
+        # Verify deck has correct number of cards (8 decks × 52 cards = 416)
+        self.assertEqual(len(self.game.deck.cards), 416)
+
 
 if __name__ == '__main__':
     unittest.main()
