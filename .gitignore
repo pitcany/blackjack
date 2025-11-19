@@ -70,3 +70,4 @@ dmypy.json
 # Project specific
 *.log
 saves/
+.worktrees/
