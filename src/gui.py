@@ -17,8 +17,9 @@ class BlackjackGUI:
         """
         self.root = root
         self.root.title("Blackjack - Card Counting Simulator")
-        self.root.geometry("1000x700")
-        self.root.resizable(False, False)
+        self.root.geometry("1000x800")
+        self.root.minsize(1000, 800)
+        self.root.resizable(True, True)
 
         # Initialize game
         self.game = BlackjackGame()
@@ -62,10 +63,19 @@ class BlackjackGUI:
                                     font=('Arial', 10, 'bold'))
         stats_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
 
-        self.balance_label = tk.Label(stats_frame, text="Balance: $1000",
+        balance_container = tk.Frame(stats_frame, bg=self.bg_color)
+        balance_container.pack(pady=2)
+
+        self.balance_label = tk.Label(balance_container, text="Balance: $1000",
                                       bg=self.bg_color, fg=self.text_color,
                                       font=('Arial', 12, 'bold'))
-        self.balance_label.pack(pady=2)
+        self.balance_label.pack(side=tk.LEFT, padx=(0, 5))
+
+        adjust_balance_btn = tk.Button(balance_container, text="Adjust",
+                                       command=self.adjust_balance,
+                                       bg=self.button_color, fg=self.text_color,
+                                       font=('Arial', 8), width=6)
+        adjust_balance_btn.pack(side=tk.LEFT)
 
         self.stats_label = tk.Label(stats_frame, text="Rounds: 0 | Wins: 0 | Losses: 0",
                                     bg=self.bg_color, fg=self.text_color,
