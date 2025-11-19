@@ -45,6 +45,7 @@ class BlackjackGame:
             allow_surrender: Whether surrender is allowed
             allow_double_after_split: Whether double after split is allowed
         """
+        self.num_decks = num_decks  # Store deck count configuration
         self.deck = Deck(num_decks)
         self.counter = CardCounter(self.deck, base_bet=min_bet)
         self.strategy = BasicStrategy()
@@ -440,6 +441,49 @@ class BlackjackGame:
             int: Suggested bet amount
         """
         return self.counter.get_suggested_bet(self.min_bet, self.max_bet)
+
+    def get_num_decks(self) -> int:
+        """Get the current number of decks in the shoe.
+
+        Returns:
+            int: Number of decks
+        """
+        return self.num_decks
+
+    def set_num_decks(self, num_decks: int) -> bool:
+        """Set the number of decks in the shoe.
+
+        This creates a new deck and resets the card count, but preserves
+        all session statistics and player balance.
+
+        Args:
+            num_decks: Number of decks (must be 1-8)
+
+        Returns:
+            bool: True if successful, False if invalid or not allowed
+
+        Raises:
+            None - returns False on error instead
+        """
+        # Validate range
+        if not (1 <= num_decks <= 8):
+            return False
+
+        # Only allow changes between rounds
+        if self.state != GameState.WAITING_FOR_BET:
+            return False
+
+        # Update configuration
+        self.num_decks = num_decks
+
+        # Create new deck and counter
+        self.deck = Deck(num_decks)
+        self.counter = CardCounter(self.deck, base_bet=self.min_bet)
+
+        # Notify GUI of change
+        self._notify_state_change()
+
+        return True
 
     def _notify_state_change(self):
         """Notify observers of state change."""
