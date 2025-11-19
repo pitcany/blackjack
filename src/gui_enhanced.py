@@ -347,13 +347,6 @@ class EnhancedBlackjackGUI:
                                       width=12, height=2)
         self.surrender_btn.grid(row=2, column=0, padx=5, pady=5)
 
-        self.new_round_btn = tk.Button(buttons_grid, text="NEW ROUND",
-                                      command=self.new_round,
-                                      bg="#4169E1", fg=self.text_color,
-                                      font=('Arial', 11, 'bold'),
-                                      width=12, height=2)
-        self.new_round_btn.grid(row=2, column=1, padx=5, pady=5)
-
     def _draw_card(self, parent, card, hide=False):
         """Draw a card on the GUI."""
         card_frame = tk.Frame(parent, bg=self.card_bg, relief=tk.RAISED,
@@ -790,7 +783,8 @@ For educational purposes only."""
 
     def _update_button_states(self):
         """Update the enabled/disabled state of buttons."""
-        can_bet = self.game.state == GameState.WAITING_FOR_BET
+        # Betting controls - allow when waiting for bet OR when round is over
+        can_bet = self.game.state in [GameState.WAITING_FOR_BET, GameState.ROUND_OVER]
         self.bet_entry.config(state=tk.NORMAL if can_bet else tk.DISABLED)
         self.deal_btn.config(state=tk.NORMAL if can_bet else tk.DISABLED)
         self.use_suggested_btn.config(state=tk.NORMAL if can_bet else tk.DISABLED)
@@ -800,9 +794,6 @@ For educational purposes only."""
         self.double_btn.config(state=tk.NORMAL if self.game.can_double() else tk.DISABLED)
         self.split_btn.config(state=tk.NORMAL if self.game.can_split() else tk.DISABLED)
         self.surrender_btn.config(state=tk.NORMAL if self.game.can_surrender() else tk.DISABLED)
-
-        can_new_round = self.game.state == GameState.ROUND_OVER
-        self.new_round_btn.config(state=tk.NORMAL if can_new_round else tk.DISABLED)
 
     # Game action methods (same as original GUI)
     def set_bet(self, amount: int):
@@ -816,6 +807,10 @@ For educational purposes only."""
 
     def deal_cards(self):
         """Deal initial cards."""
+        # Auto-reset if previous round is over
+        if self.game.state == GameState.ROUND_OVER:
+            self.game.reset_round()
+
         try:
             bet_amount = int(self.bet_var.get())
         except ValueError:
@@ -852,10 +847,6 @@ For educational purposes only."""
     def surrender(self):
         """Player surrenders."""
         self.game.surrender()
-
-    def new_round(self):
-        """Start a new round."""
-        self.game.reset_round()
 
     def adjust_balance(self):
         """Manually adjust the player balance."""
