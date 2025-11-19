@@ -19,8 +19,9 @@ class EnhancedBlackjackGUI:
         """
         self.root = root
         self.root.title("Blackjack Pro - Advanced Card Counting Simulator")
-        self.root.geometry("1100x750")
-        self.root.resizable(False, False)
+        self.root.geometry("1100x850")
+        self.root.minsize(1100, 850)
+        self.root.resizable(True, True)
 
         # Initialize game with advanced counter
         self.game = BlackjackGame()
@@ -127,10 +128,19 @@ class EnhancedBlackjackGUI:
                                     font=('Arial', 10, 'bold'))
         stats_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
 
-        self.balance_label = tk.Label(stats_frame, text="Balance: $1000",
+        balance_container = tk.Frame(stats_frame, bg=self.bg_color)
+        balance_container.pack(pady=2)
+
+        self.balance_label = tk.Label(balance_container, text="Balance: $1000",
                                       bg=self.bg_color, fg=self.text_color,
                                       font=('Arial', 12, 'bold'))
-        self.balance_label.pack(pady=2)
+        self.balance_label.pack(side=tk.LEFT, padx=(0, 5))
+
+        adjust_balance_btn = tk.Button(balance_container, text="Adjust",
+                                       command=self.adjust_balance,
+                                       bg=self.button_color, fg=self.text_color,
+                                       font=('Arial', 8), width=6)
+        adjust_balance_btn.pack(side=tk.LEFT)
 
         self.stats_label = tk.Label(stats_frame, text="Rounds: 0 | Wins: 0 | Losses: 0",
                                     bg=self.bg_color, fg=self.text_color,
@@ -756,6 +766,66 @@ For educational purposes only."""
     def new_round(self):
         """Start a new round."""
         self.game.reset_round()
+
+    def adjust_balance(self):
+        """Manually adjust the player balance."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Adjust Balance")
+        dialog.geometry("350x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Adjust Balance",
+                font=('Arial', 14, 'bold')).pack(pady=15)
+
+        tk.Label(dialog, text=f"Current Balance: ${self.game.player_balance}",
+                font=('Arial', 11)).pack(pady=5)
+
+        # Balance entry
+        entry_frame = tk.Frame(dialog)
+        entry_frame.pack(pady=10)
+
+        tk.Label(entry_frame, text="New Balance: $", font=('Arial', 12)).pack(side=tk.LEFT)
+
+        balance_var = tk.StringVar(value=str(self.game.player_balance))
+        balance_entry = tk.Entry(entry_frame, textvariable=balance_var,
+                                font=('Arial', 12), width=10)
+        balance_entry.pack(side=tk.LEFT, padx=5)
+        balance_entry.focus()
+        balance_entry.select_range(0, tk.END)
+
+        def save_balance():
+            try:
+                new_balance = int(balance_var.get())
+                if new_balance < 0:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance cannot be negative")
+                    return
+                if new_balance > 10000000:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance cannot exceed $10,000,000")
+                    return
+
+                self.game.player_balance = new_balance
+                self.update_display()
+                dialog.destroy()
+                messagebox.showinfo("Balance Updated",
+                                  f"Balance set to ${new_balance}")
+
+            except ValueError:
+                messagebox.showerror("Invalid Input",
+                                   "Please enter a valid number")
+
+        # Buttons
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Save", command=save_balance,
+                 font=('Arial', 11, 'bold'), width=10,
+                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
+                 font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
 
     def run(self):
         """Run the GUI main loop."""
