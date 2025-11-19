@@ -575,6 +575,66 @@ class BlackjackGUI:
         tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
                  font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
 
+    def adjust_balance(self):
+        """Manually adjust the player balance."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Adjust Balance")
+        dialog.geometry("350x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Adjust Balance",
+                font=('Arial', 14, 'bold')).pack(pady=15)
+
+        tk.Label(dialog, text=f"Current Balance: ${self.game.player_balance}",
+                font=('Arial', 11)).pack(pady=5)
+
+        # Balance entry
+        entry_frame = tk.Frame(dialog)
+        entry_frame.pack(pady=10)
+
+        tk.Label(entry_frame, text="New Balance: $", font=('Arial', 12)).pack(side=tk.LEFT)
+
+        balance_var = tk.StringVar(value=str(self.game.player_balance))
+        balance_entry = tk.Entry(entry_frame, textvariable=balance_var,
+                                font=('Arial', 12), width=10)
+        balance_entry.pack(side=tk.LEFT, padx=5)
+        balance_entry.focus()
+        balance_entry.select_range(0, tk.END)
+
+        def save_balance():
+            try:
+                new_balance = int(balance_var.get())
+                if new_balance < 0:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance cannot be negative")
+                    return
+                if new_balance > 10000000:
+                    messagebox.showerror("Invalid Balance",
+                                       "Balance cannot exceed $10,000,000")
+                    return
+
+                self.game.player_balance = new_balance
+                self.update_display()
+                dialog.destroy()
+                messagebox.showinfo("Balance Updated",
+                                  f"Balance set to ${new_balance}")
+
+            except ValueError:
+                messagebox.showerror("Invalid Input",
+                                   "Please enter a valid number")
+
+        # Buttons
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Save", command=save_balance,
+                 font=('Arial', 11, 'bold'), width=10,
+                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
+
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
+                 font=('Arial', 11), width=10).pack(side=tk.LEFT, padx=5)
+
     def run(self):
         """Run the GUI main loop."""
         self.root.mainloop()
