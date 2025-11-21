@@ -50,7 +50,56 @@ class EnhancedBlackjackGUI:
 
         self._create_menu()
         self._setup_ui()
+        self._setup_keybindings()
         self.update_display()
+
+    def _setup_keybindings(self):
+        """Set up keyboard shortcuts for gameplay."""
+        # Game actions
+        self.root.bind('h', lambda e: self._key_hit())
+        self.root.bind('H', lambda e: self._key_hit())
+        self.root.bind('s', lambda e: self._key_stand())
+        self.root.bind('S', lambda e: self._key_stand())
+        self.root.bind('d', lambda e: self._key_double())
+        self.root.bind('D', lambda e: self._key_double())
+        self.root.bind('p', lambda e: self._key_split())
+        self.root.bind('P', lambda e: self._key_split())
+        self.root.bind('r', lambda e: self._key_surrender())  # R for suRrender
+        self.root.bind('R', lambda e: self._key_surrender())
+
+        # Deal with Space or Enter
+        self.root.bind('<space>', lambda e: self._key_deal())
+        self.root.bind('<Return>', lambda e: self._key_deal())
+
+    def _key_hit(self):
+        """Handle H key for hit."""
+        if self.game.can_hit():
+            self.hit()
+
+    def _key_stand(self):
+        """Handle S key for stand."""
+        if self.game.can_stand():
+            self.stand()
+
+    def _key_double(self):
+        """Handle D key for double."""
+        if self.game.can_double():
+            self.double_down()
+
+    def _key_split(self):
+        """Handle P key for split."""
+        if self.game.can_split():
+            self.split()
+
+    def _key_surrender(self):
+        """Handle R key for surrender."""
+        if self.game.can_surrender():
+            self.surrender()
+
+    def _key_deal(self):
+        """Handle Space/Enter for deal."""
+        if self.game.state in [GameState.WAITING_FOR_BET, GameState.ROUND_OVER]:
+            self.deal_cards()
 
     def _create_menu(self):
         """Create menu bar."""
