@@ -381,7 +381,7 @@ def test_hand_logic():
 def test_counting():
     print("\n--- Testing Counting ---")
     counter = Counter()
-    cards = [Card(Rank.TWO, Suit.S), Card(Rank.FIVE, Suit.H), Card(Rank.TEN, Suit.D), Card(Rank.ACE, Suit.C)] 
+    cards = [Card(Rank.TWO, Suit.SPADES), Card(Rank.FIVE, Suit.HEARTS), Card(Rank.TEN, Suit.DIAMONDS), Card(Rank.ACE, Suit.CLUBS)] 
     # Values: +1, +1, -1, -1 = 0
     for c in cards:
         counter.update(c)
