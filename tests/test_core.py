@@ -402,9 +402,9 @@ def test_strategy():
     
     # 16 vs 10
     h = Hand()
-    h.add_card(Card(Rank.TEN, Suit.S))
-    h.add_card(Card(Rank.SIX, Suit.H))
-    dealer = Card(Rank.TEN, Suit.C)
+    h.add_card(Card(Rank.TEN, Suit.SPADES))
+    h.add_card(Card(Rank.SIX, Suit.HEARTS))
+    dealer = Card(Rank.TEN, Suit.CLUBS)
     
     move = engine.get_basic_strategy_move(h, dealer)
     print(f"16 vs 10 Basic: {move}")
@@ -422,9 +422,9 @@ def test_strategy():
 
     # 12 vs 2
     h2 = Hand()
-    h2.add_card(Card(Rank.TEN, Suit.S))
-    h2.add_card(Card(Rank.TWO, Suit.H))
-    dealer2 = Card(Rank.TWO, Suit.D)
+    h2.add_card(Card(Rank.TEN, Suit.SPADES))
+    h2.add_card(Card(Rank.TWO, Suit.HEARTS))
+    dealer2 = Card(Rank.TWO, Suit.DIAMONDS)
     move2 = engine.get_basic_strategy_move(h2, dealer2)
     print(f"12 vs 2 Basic: {move2}")
     assert move2 == Action.HIT
