@@ -1,0 +1,1 @@
+fastapi\nuvicorn\nmotor\npyjwt\npasslib[bcrypt]\npython-multipart\npydantic-settings
