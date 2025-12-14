@@ -161,6 +161,14 @@ async def update_settings(settings: dict, current_user: dict = Depends(get_curre
         {"email": current_user["email"]},
         {"$set": {"settings": settings}}
     )
+@app.put("/api/progress")
+async def update_progress(progress: dict, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"email": current_user["email"]},
+        {"$set": {"lesson_progress": progress}}
+    )
+    return {"status": "updated"}
+
     return {"status": "updated"}
 
 @app.post("/api/sessions/save")
