@@ -4,6 +4,7 @@ import { Action } from '../lib/engine';
 
 export default function Controls() {
   const { gameState, dispatchAction, deal, resetShoe } = useStore();
+  const engine = useStore(state => state.engine);
   
   if (!gameState) return (
       <div className="flex justify-center">
@@ -37,9 +38,18 @@ export default function Controls() {
     <div className="flex justify-center gap-4 flex-wrap">
       <ActionButton onClick={() => dispatchAction(Action.HIT)} label="Hit" color="bg-green-600" />
       <ActionButton onClick={() => dispatchAction(Action.STAND)} label="Stand" color="bg-red-600" />
-      <ActionButton onClick={() => dispatchAction(Action.DOUBLE)} label="Double" color="bg-yellow-600" />
-      <ActionButton onClick={() => dispatchAction(Action.SPLIT)} label="Split" color="bg-blue-600" disabled={false} /> 
-      {/* Logic for disabled split needed in engine/store */}
+      <ActionButton 
+        onClick={() => dispatchAction(Action.DOUBLE)} 
+        label="Double" 
+        color="bg-yellow-600" 
+        disabled={!engine.canDouble} 
+      />
+      <ActionButton 
+        onClick={() => dispatchAction(Action.SPLIT)} 
+        label="Split" 
+        color="bg-blue-600" 
+        disabled={!engine.canSplit} 
+      /> 
     </div>
   );
 }
