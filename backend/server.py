@@ -53,6 +53,7 @@ class UserInDB(BaseModel):
     hashed_password: str
     bankroll: float = 10000.0
     settings: dict = {}
+    lesson_progress: dict = {}
 
 class Token(BaseModel):
     access_token: str
