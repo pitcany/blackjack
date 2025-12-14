@@ -2,27 +2,32 @@ import React from 'react';
 import HUD from './HUD';
 import Controls from './Controls';
 import Card from './Card';
+import LessonOverlay from './LessonOverlay';
 import { useStore } from '../lib/store';
 
 export default function Table() {
-  const { gameState, user, logout } = useStore();
+  const { gameState, user } = useStore();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden md:flex-row">
-      {/* Left Panel: Stats/Menu (Hidden on mobile usually or drawer) */}
+    <div className="flex flex-col flex-1 h-[calc(100vh-64px)] overflow-hidden md:flex-row">
+      {/* Left Panel: Stats (Hidden on mobile usually or drawer) */}
       <div className="hidden md:flex flex-col w-64 bg-neutral-900 border-r border-neutral-800 p-4 space-y-4">
-        <h1 className="text-xl font-bold text-emerald-500">Blackjack Trainer</h1>
+        <h1 className="text-xl font-bold text-emerald-500">Session Stats</h1>
         <div className="space-y-2">
-            <div className="text-sm text-neutral-400">Bankroll</div>
-            <div className="text-2xl font-mono text-emerald-400">${gameState?.bankroll || user?.bankroll || 0}</div>
+            <div className="text-sm text-neutral-400">Current Bankroll</div>
+            <div className="text-2xl font-mono text-emerald-400">${gameState?.bankroll?.toFixed(0) || user?.bankroll?.toFixed(0) || 0}</div>
         </div>
-        <button onClick={logout} className="px-4 py-2 text-sm text-neutral-400 hover:text-white border border-neutral-700 rounded">
-            Sign Out
-        </button>
+        <div className="space-y-2 pt-4 border-t border-neutral-800">
+             <div className="text-sm text-neutral-400">Hands Played</div>
+             <div className="text-xl text-white font-mono">{gameState?.handsPlayed || 0}</div>
+        </div>
       </div>
 
       {/* Main Game Area */}
       <div className="relative flex-1 flex flex-col felt-bg shadow-inner">
+        
+        {/* Lesson Overlay */}
+        <LessonOverlay />
         
         {/* Dealer Area */}
         <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -71,7 +76,7 @@ export default function Table() {
             </div>
             
             {gameState?.message && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/60 backdrop-blur text-white px-6 py-3 rounded-xl shadow-xl border border-white/10 animate-in fade-in zoom-in duration-300">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/60 backdrop-blur text-white px-6 py-3 rounded-xl shadow-xl border border-white/10 animate-in fade-in zoom-in duration-300 z-40">
                     {gameState.message}
                 </div>
             )}
