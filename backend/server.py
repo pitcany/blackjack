@@ -152,6 +152,7 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
     return {
         "email": current_user["email"],
         "bankroll": current_user.get("bankroll", 10000),
+        "lesson_progress": current_user.get("lesson_progress", {}),
         "settings": current_user.get("settings", {})
     }
 
