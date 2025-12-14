@@ -23,10 +23,24 @@
   - Strategy Advice ("Why" text).
   - Persistence (Bankroll saves).
 - **Testing**: End-to-End verified by Testing Agent.
-- **Fixes**: Resolved Registration error by configuring `package.json` proxy and clearing `REACT_APP_BACKEND_URL` to support both local testing and ingress deployment.
+- **Fixes**: Resolved Registration error by configuring `package.json` proxy and cleared `REACT_APP_BACKEND_URL`.
 
-### Phase 3 — Enhancements (Optional)
-- Drills (count speed), hand history replay, mistake tracking dashboards.
-- Strategy quizzes.
+### Phase 3 — Learn Mode & Curriculum (Current)
+- **Objective**: Add a guided "Learn" mode with structured lessons (Hi-Lo, KO, Omega II).
+- **Backend**: Update User model to store `lesson_progress`.
+- **Frontend**:
+  - **Navigation**: Add Play | Learn | Drills | Review tabs.
+  - **Lesson Engine**: Support for interactive steps, goals, and scenarios.
+  - **Game Engine Upgrade**: Add ability to "rig" the shoe or force game state for lessons.
+  - **Curriculum Content**: Implement Modules A-F as defined in prompt.
+  - **UI**: Learn Dashboard, Lesson Runner Overlay.
 
-## Status: MVP Complete & Deployed.
+### Phase 4 — Mistake Tracking & Analytics (Next)
+- Event logging per hand.
+- Session score calculation.
+- Review Dashboard.
+
+### Phase 5 — Productization (Future)
+- Landing page, Onboarding, Payments/Gating.
+
+## Status: Starting Phase 3 (Learn Mode).
