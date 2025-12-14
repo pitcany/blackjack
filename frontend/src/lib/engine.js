@@ -85,6 +85,12 @@ export class Shoe {
          const limit = Math.floor(this.numDecks * 52 * (1 - this.penetration));
          return this.cards.length <= limit;
     }
+
+    stack(cards) {
+        // Prepend cards to the top of the shoe (next to be dealt)
+        // cards: array of Card objects
+        this.cards.unshift(...cards);
+    }
 }
 
 export class Hand {
