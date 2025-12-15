@@ -25,15 +25,16 @@
 - **Testing**: End-to-End verified by Testing Agent.
 - **Fixes**: Resolved Registration error by configuring `package.json` proxy and cleared `REACT_APP_BACKEND_URL`.
 
-### Phase 3 — Learn Mode & Curriculum (Current)
+### Phase 3 — Learn Mode & Curriculum - COMPLETED
 - **Objective**: Add a guided "Learn" mode with structured lessons (Hi-Lo, KO, Omega II).
-- **Backend**: Update User model to store `lesson_progress`.
+- **Backend**: Added `lesson_progress` to User model and `/api/progress` endpoint.
 - **Frontend**:
-  - **Navigation**: Add Play | Learn | Drills | Review tabs.
-  - **Lesson Engine**: Support for interactive steps, goals, and scenarios.
-  - **Game Engine Upgrade**: Add ability to "rig" the shoe or force game state for lessons.
-  - **Curriculum Content**: Implement Modules A-F as defined in prompt.
-  - **UI**: Learn Dashboard, Lesson Runner Overlay.
+  - **Navigation**: Added Play | Learn | Drills | Review tabs via `NavBar.jsx`.
+  - **Lesson Engine**: `lib/lessonStore.js` manages lesson state; `lib/lessons.js` defines curriculum.
+  - **Engine Upgrade**: Added `setScenario` to `GameEngine` to rig shoe/hands for lessons.
+  - **UI**: `LearnPage.jsx` dashboard, `LessonOverlay.jsx` for interactive steps.
+  - **Routing**: Updated `App.jsx` with protected routes.
+- **Testing**: Verified full Lesson A1 flow (Info -> Quiz -> Action -> Complete -> Save Progress).
 
 ### Phase 4 — Mistake Tracking & Analytics (Next)
 - Event logging per hand.
@@ -43,4 +44,4 @@
 ### Phase 5 — Productization (Future)
 - Landing page, Onboarding, Payments/Gating.
 
-## Status: Starting Phase 3 (Learn Mode).
+## Status: Phase 3 Complete. Learn Mode Live.
