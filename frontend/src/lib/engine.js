@@ -266,45 +266,6 @@ export class GameEngine {
             if (hand.value > 21) {
                 hand.status = 'busted';
                 this.nextHand();
-    setScenario(scenario) {
-        // scenario: { playerHands: [[c1, c2]], dealerHand: [c1, c2], runningCount: int, nextCards: [c1, c2...] }
-        if (scenario.runningCount !== undefined) this.runningCount = scenario.runningCount;
-        
-        if (scenario.dealerHand) {
-            this.dealerHand = new Hand();
-            scenario.dealerHand.forEach(c => this.dealerHand.addCard(c));
-            // Assuming first is up, second is hole.
-            this.dealerHoleCard = this.dealerHand.cards[1];
-            // In a real deal, dealerHoleCard is separate until reveal.
-            // But for scenario setting, we might want to just set it.
-            // Let's ensure dealerHand only has upcard visible if phase is player_turn.
-            if (this.phase === 'player_turn') {
-                this.dealerHoleCard = this.dealerHand.cards.pop(); 
-            }
-        }
-        
-        if (scenario.playerHands) {
-            this.playerHands = scenario.playerHands.map(cards => {
-                const h = new Hand();
-                cards.forEach(c => h.addCard(c));
-                h.bet = 10; // default for scenario
-                return h;
-            });
-            this.currentHandIndex = 0;
-        }
-
-        if (scenario.nextCards) {
-            this.shoe.stack(scenario.nextCards);
-        }
-        
-        if (scenario.phase) {
-            this.phase = scenario.phase;
-        }
-        
-        // Recalc messages or status if needed
-        this.message = scenario.message || '';
-    }
-
             }
         } else if (action === Action.STAND) {
             hand.status = 'stood';
