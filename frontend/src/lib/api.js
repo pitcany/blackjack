@@ -40,6 +40,8 @@ export const getCurrentUser = async () => {
   return res.data;
 };
 
+export const getMe = getCurrentUser; // Alias for compatibility
+
 export const updateProgress = async (progress) => {
   const res = await api.put('/api/progress', progress);
   return res.data;
