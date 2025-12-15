@@ -124,7 +124,6 @@ async def register(user: UserCreate):
             "difficulty": "soft"
         },
         "lesson_progress": {}
-        }
     }
     await db.users.insert_one(new_user)
     
