@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, register } from '../lib/api';
-import { useStore } from '../lib/store';
 
 const ONBOARDING_STEPS = [
   {
@@ -39,7 +38,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const setUser = useStore(state => state.setUser);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

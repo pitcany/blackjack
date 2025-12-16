@@ -30,6 +30,10 @@ export const useStore = create((set, get) => ({
       mistakes: 0
   },
 
+  // Play feedback
+  lastPlayFeedback: null, // { isCorrect: bool, recommended: string }
+  clearFeedback: () => set({ lastPlayFeedback: null }),
+
   initGame: (rules) => {
       const engine = new GameEngine(rules);
       set({ engine, gameState: engine.getState() });
@@ -78,7 +82,15 @@ export const useStore = create((set, get) => ({
 
       // Execute action
       engine.handleAction(action);
-      set({ gameState: engine.getState() });
+      set({
+          gameState: engine.getState(),
+          lastPlayFeedback: { isCorrect, recommended: recommendation.action }
+      });
+
+      // Auto-clear feedback after 1.5 seconds
+      setTimeout(() => {
+          get().clearFeedback();
+      }, 1500);
 
       // Log the event if we have an active session
       if (currentSessionId) {
@@ -145,6 +157,19 @@ export const useStore = create((set, get) => ({
       const { engine } = get();
       engine.shoe.reshuffle();
       set({ gameState: engine.getState() });
+  },
+
+  resetBankroll: () => {
+      const { engine } = get();
+      engine.bankroll = 10000;
+      engine.shoe.reshuffle();
+      engine.runningCount = 0;
+      engine.phase = 'betting';
+      set({
+          gameState: engine.getState(),
+          currentSessionId: null,
+          sessionStats: { handsPlayed: 0, correctPlays: 0, mistakes: 0 }
+      });
   },
 
   saveProgress: async () => {

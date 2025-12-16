@@ -143,7 +143,7 @@ const BASIC_STRATEGY = {
         6: createMap([2,11], Action.HIT),
         7: createMap([2,11], Action.HIT),
         8: createMap([2,11], Action.HIT),
-        9: { ...createMap([2,6], Action.DOUBLE), ...createMap([7,11], Action.HIT) },
+        9: { 2: Action.HIT, ...createMap([3,6], Action.DOUBLE), ...createMap([7,11], Action.HIT) },
         10: { ...createMap([2,9], Action.DOUBLE), ...createMap([10,11], Action.HIT) },
         11: createMap([2,11], Action.DOUBLE),
         12: { ...createMap([2,3], Action.HIT), ...createMap([4,6], Action.STAND), ...createMap([7,11], Action.HIT) },
@@ -289,6 +289,8 @@ export class GameEngine {
                  return;
              }
              this.bankroll -= hand.bet;
+             const splitCard = hand.cards[0];
+             const isSplitAces = splitCard.rank === 'A';
              const card2 = hand.cards.pop();
              const newHand = new Hand();
              newHand.addCard(card2);
@@ -306,7 +308,16 @@ export class GameEngine {
              newHand.addCard(c2);
              this.updateCount(c2);
 
-             // Player plays first hand completely, then moves to second hand
+             // Split aces: only one card per hand, then automatically stand
+             if (isSplitAces) {
+                 hand.status = 'stood';
+                 newHand.status = 'stood';
+                 this.message = 'Split Aces: One card only';
+                 // Move through all split hands to dealer turn
+                 this.currentHandIndex = this.playerHands.length - 1;
+                 this.nextHand();
+             }
+             // Regular split: player plays first hand completely, then moves to second hand
         }
     }
     

@@ -6,7 +6,7 @@ import LessonOverlay from './LessonOverlay';
 import { useStore } from '../lib/store';
 
 export default function Table() {
-  const { gameState, user, sessionStats, currentSessionId, endTrackedSession } = useStore();
+  const { gameState, user, sessionStats, currentSessionId, endTrackedSession, lastPlayFeedback } = useStore();
   const [showMobileHUD, setShowMobileHUD] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
   const [sessionResult, setSessionResult] = useState(null);
@@ -30,6 +30,11 @@ export default function Table() {
       {/* Session Summary Modal */}
       {showSessionSummary && sessionResult && (
         <SessionSummaryModal result={sessionResult} onClose={closeSummary} />
+      )}
+
+      {/* Game Over Modal */}
+      {gameState?.bankroll <= 0 && gameState?.phase !== 'player_turn' && (
+        <GameOverModal />
       )}
 
       {/* Left Panel: Stats (Hidden on mobile) */}
@@ -102,11 +107,15 @@ export default function Table() {
                     {gameState?.dealerHand?.cards.map((card, i) => (
                         <Card key={i} card={card} index={i} />
                     ))}
+                    {/* Show face-down hole card during player turn */}
+                    {gameState?.phase === 'player_turn' && gameState?.dealerHand?.cards.length === 1 && (
+                        <Card faceDown={true} index={1} />
+                    )}
                     {(!gameState?.dealerHand?.cards.length) && <div className="w-24 h-36 border-2 border-dashed border-emerald-800/50 rounded-lg"></div>}
                 </div>
                 {gameState?.dealerHand?.cards.length > 0 && (
                      <div className="mt-2 text-center text-emerald-100 font-mono text-sm bg-black/20 rounded px-2 py-1 inline-block">
-                        {gameState.dealerHand.value}
+                        {gameState.phase === 'player_turn' ? gameState.dealerHand.cards[0]?.value || '?' : gameState.dealerHand.value}
                      </div>
                 )}
             </div>
@@ -145,6 +154,32 @@ export default function Table() {
                 </div>
             )}
         </div>
+
+        {/* Play Feedback Indicator */}
+        {lastPlayFeedback && (
+          <div className={`absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in zoom-in duration-200`}>
+            <div className={`px-6 py-3 rounded-xl shadow-2xl border-2 ${
+              lastPlayFeedback.isCorrect
+                ? 'bg-green-900/90 border-green-500 text-green-200'
+                : 'bg-red-900/90 border-red-500 text-red-200'
+            }`}>
+              {lastPlayFeedback.isCorrect ? (
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <span className="text-2xl">✓</span> Correct!
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-lg font-bold">
+                    <span className="text-2xl">✗</span> Incorrect
+                  </div>
+                  <div className="text-sm mt-1 opacity-80">
+                    Should: {lastPlayFeedback.recommended}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="bg-neutral-900/90 backdrop-blur border-t border-neutral-800 p-4">
@@ -264,6 +299,40 @@ function SessionSummaryModal({ result, onClose }) {
             className="flex-1 py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg font-medium transition-colors text-center"
           >
             View History
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Game Over Modal - shown when bankroll reaches zero
+function GameOverModal() {
+  const resetBankroll = useStore(state => state.resetBankroll);
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-neutral-800 rounded-xl max-w-md w-full p-6 shadow-2xl border border-red-600/50">
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4">💸</div>
+          <h2 className="text-2xl font-bold text-red-400 mb-2">Bankroll Depleted!</h2>
+          <p className="text-neutral-400">
+            You've run out of chips. Time to reload and try again!
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={resetBankroll}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors"
+          >
+            Reset Bankroll ($10,000)
+          </button>
+          <a
+            href="/review"
+            className="block w-full py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg font-medium transition-colors text-center"
+          >
+            Review Session
           </a>
         </div>
       </div>
