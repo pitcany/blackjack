@@ -158,22 +158,36 @@ export default function Table() {
         {/* Play Feedback Indicator */}
         {lastPlayFeedback && (
           <div className={`absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in zoom-in duration-200`}>
-            <div className={`px-6 py-3 rounded-xl shadow-2xl border-2 ${
+            <div className={`px-6 py-4 rounded-xl shadow-2xl border-2 max-w-sm ${
               lastPlayFeedback.isCorrect
-                ? 'bg-green-900/90 border-green-500 text-green-200'
-                : 'bg-red-900/90 border-red-500 text-red-200'
+                ? 'bg-green-900/95 border-green-500 text-green-200'
+                : 'bg-red-900/95 border-red-500 text-red-200'
             }`}>
               {lastPlayFeedback.isCorrect ? (
-                <div className="flex items-center gap-2 text-lg font-bold">
-                  <span className="text-2xl">✓</span> Correct!
+                <div>
+                  <div className="flex items-center gap-2 text-lg font-bold">
+                    <span className="text-2xl">✓</span> Correct!
+                  </div>
+                  {lastPlayFeedback.isDeviation && (
+                    <div className="text-xs mt-2 text-green-300/80 bg-green-800/30 px-2 py-1 rounded">
+                      Index Play Applied
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="flex items-center gap-2 text-lg font-bold">
+                  <div className="flex items-center justify-center gap-2 text-lg font-bold">
                     <span className="text-2xl">✗</span> Incorrect
                   </div>
-                  <div className="text-sm mt-1 opacity-80">
-                    Should: {lastPlayFeedback.recommended}
+                  <div className="mt-2 space-y-1">
+                    <div className="text-sm">
+                      You: <span className="font-semibold">{lastPlayFeedback.playerAction}</span>
+                      {' → '}
+                      Should: <span className="font-semibold text-white">{lastPlayFeedback.recommended}</span>
+                    </div>
+                    <div className="text-xs opacity-80 bg-red-800/30 px-2 py-1 rounded">
+                      {lastPlayFeedback.reason}
+                    </div>
                   </div>
                 </div>
               )}

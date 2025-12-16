@@ -1,8 +1,12 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { GameEngine, Action } from './engine';
 import { saveSession, updateSettings, startSession, logHandEvent, endSession as endSessionApi } from './api';
+import { LESSON_PREREQUISITES, TABLE_ACCESS_REQUIREMENTS } from './lessons';
 
-export const useStore = create((set, get) => ({
+export const useStore = create(
+  persist(
+    (set, get) => ({
   user: null,
   isAuthenticated: false,
   setUser: (user) => {
@@ -16,6 +20,33 @@ export const useStore = create((set, get) => ({
   logout: () => {
       localStorage.removeItem('token');
       set({ user: null, isAuthenticated: false, currentSessionId: null });
+  },
+
+  // Lesson completion tracking
+  completedLessons: [],
+
+  completeLesson: (lessonId) => {
+      const { completedLessons } = get();
+      if (!completedLessons.includes(lessonId)) {
+          set({ completedLessons: [...completedLessons, lessonId] });
+      }
+  },
+
+  canAccessLesson: (lessonId) => {
+      const { completedLessons } = get();
+      const prerequisites = LESSON_PREREQUISITES[lessonId] || [];
+      return prerequisites.every(prereq => completedLessons.includes(prereq));
+  },
+
+  canAccessTable: () => {
+      const { completedLessons } = get();
+      return TABLE_ACCESS_REQUIREMENTS.every(req => completedLessons.includes(req));
+  },
+
+  getNextLesson: () => {
+      const { completedLessons, canAccessLesson } = get();
+      const allLessons = ['a1', 'a2', 'b1', 'b2', 'b3', 'c1', 'c2', 'd1', 'd2', 'e1'];
+      return allLessons.find(id => !completedLessons.includes(id) && canAccessLesson(id));
   },
 
   // Game State
@@ -84,13 +115,19 @@ export const useStore = create((set, get) => ({
       engine.handleAction(action);
       set({
           gameState: engine.getState(),
-          lastPlayFeedback: { isCorrect, recommended: recommendation.action }
+          lastPlayFeedback: {
+              isCorrect,
+              recommended: recommendation.action,
+              reason: recommendation.reason,
+              playerAction: action,
+              isDeviation: recommendation.reason.startsWith('I18')
+          }
       });
 
-      // Auto-clear feedback after 1.5 seconds
+      // Auto-clear feedback after 2.5 seconds (longer for learning)
       setTimeout(() => {
           get().clearFeedback();
-      }, 1500);
+      }, 2500);
 
       // Log the event if we have an active session
       if (currentSessionId) {
@@ -187,4 +224,12 @@ export const useStore = create((set, get) => ({
           console.error("Failed to save", err);
       }
   }
-}));
+}),
+    {
+      name: 'blackjack-progress',
+      partialize: (state) => ({
+        completedLessons: state.completedLessons
+      })
+    }
+  )
+);
