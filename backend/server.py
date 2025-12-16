@@ -260,10 +260,14 @@ async def log_hand_event(session_id: str, event: HandEvent, current_user: dict =
     )
     return {"status": "logged"}
 
+class EndSessionRequest(BaseModel):
+    ending_bankroll: float
+
 @app.post("/api/sessions/{session_id}/end")
-async def end_session(session_id: str, ending_bankroll: float, current_user: dict = Depends(get_current_user)):
+async def end_session(session_id: str, request: EndSessionRequest, current_user: dict = Depends(get_current_user)):
     """End a game session and calculate final stats"""
     from bson import ObjectId
+    ending_bankroll = request.ending_bankroll
 
     session = await db.game_sessions.find_one({
         "_id": ObjectId(session_id),

@@ -293,17 +293,20 @@ export class GameEngine {
              const newHand = new Hand();
              newHand.addCard(card2);
              newHand.bet = hand.bet;
-             
+
              this.playerHands.splice(this.currentHandIndex + 1, 0, newHand);
-             
-             // Deal 2nd cards to split hands
+
+             // Deal second card to first split hand
              const c1 = this.shoe.dealCard();
              hand.addCard(c1);
              this.updateCount(c1);
-             
-             // In many casinos, you play split hand 1 completely, then hand 2.
-             // We stay on hand 1 (index).
-             // If Ace split, usually only 1 card, but logic simplified here.
+
+             // Deal second card to second split hand
+             const c2 = this.shoe.dealCard();
+             newHand.addCard(c2);
+             this.updateCount(c2);
+
+             // Player plays first hand completely, then moves to second hand
         }
     }
     

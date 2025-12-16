@@ -70,8 +70,8 @@ export const logHandEvent = async (sessionId, event) => {
 };
 
 export const endSession = async (sessionId, endingBankroll) => {
-  const res = await api.post(`/api/sessions/${sessionId}/end`, null, {
-    params: { ending_bankroll: endingBankroll }
+  const res = await api.post(`/api/sessions/${sessionId}/end`, {
+    ending_bankroll: endingBankroll
   });
   return res.data;
 };
