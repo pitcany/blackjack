@@ -56,3 +56,42 @@ export const saveSession = async (sessionData) => {
   const res = await api.post('/api/sessions/save', sessionData);
   return res.data;
 };
+
+// --- Phase 4: Session & Event Tracking ---
+
+export const startSession = async () => {
+  const res = await api.post('/api/sessions/start');
+  return res.data;
+};
+
+export const logHandEvent = async (sessionId, event) => {
+  const res = await api.post(`/api/sessions/${sessionId}/hand`, event);
+  return res.data;
+};
+
+export const endSession = async (sessionId, endingBankroll) => {
+  const res = await api.post(`/api/sessions/${sessionId}/end`, null, {
+    params: { ending_bankroll: endingBankroll }
+  });
+  return res.data;
+};
+
+export const getSessionHistory = async (limit = 20) => {
+  const res = await api.get('/api/sessions/history', { params: { limit } });
+  return res.data;
+};
+
+export const getSessionDetail = async (sessionId) => {
+  const res = await api.get(`/api/sessions/${sessionId}`);
+  return res.data;
+};
+
+export const getCommonMistakes = async (limit = 10) => {
+  const res = await api.get('/api/stats/mistakes', { params: { limit } });
+  return res.data;
+};
+
+export const getStatsOverview = async () => {
+  const res = await api.get('/api/stats/overview');
+  return res.data;
+};

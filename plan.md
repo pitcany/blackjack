@@ -36,12 +36,45 @@
   - **Routing**: Updated `App.jsx` with protected routes.
 - **Testing**: Verified full Lesson A1 flow (Info -> Quiz -> Action -> Complete -> Save Progress).
 
-### Phase 4 — Mistake Tracking & Analytics (Next)
-- Event logging per hand.
-- Session score calculation.
-- Review Dashboard.
+### Phase 4 — Mistake Tracking & Analytics - COMPLETED
+- **Objective**: Track user decisions and provide analytics for improvement.
+- **Backend**:
+  - Added `HandEvent` and `SessionStats` models for granular tracking.
+  - New endpoints: `/api/sessions/start`, `/api/sessions/{id}/hand`, `/api/sessions/{id}/end`.
+  - Session history: `/api/sessions/history`, `/api/sessions/{id}` for detail view.
+  - Analytics: `/api/stats/mistakes` for common mistakes, `/api/stats/overview` for aggregate stats.
+- **Frontend**:
+  - Updated `lib/store.js` with session tracking integration.
+  - Added `lib/api.js` functions for all new endpoints.
+  - Created `ReviewPage.jsx` with:
+    - Overview tab: Total sessions, hands, accuracy, profit stats.
+    - Sessions tab: Historical session list with details.
+    - Mistakes tab: Most common mistakes analysis.
+    - Session detail modal: Full hand-by-hand breakdown.
+  - Integrated event logging into gameplay flow.
 
-### Phase 5 — Productization (Future)
-- Landing page, Onboarding, Payments/Gating.
+### Phase 5 — Productization - COMPLETED
+- **Objective**: Create polished user experience for new users.
+- **Frontend**:
+  - Created `LandingPage.jsx`:
+    - Hero section with compelling messaging.
+    - Features grid (Basic Strategy, Card Counting, etc.).
+    - "How It Works" steps.
+    - Statistics showcase.
+    - Call-to-action sections.
+  - Enhanced `Login.jsx` with onboarding flow:
+    - 5-step guided tour for new users.
+    - Progress indicators.
+    - Skip option for returning users.
+  - Updated `App.jsx`:
+    - Added `/welcome` route for landing page.
+    - Improved loading state handling.
+    - Better route protection.
 
-## Status: Phase 3 Complete. Learn Mode Live.
+### Phase 6 — Future Enhancements (Planned)
+- Drill mode with timed challenges.
+- Payments/subscription gating.
+- Leaderboards and social features.
+- Mobile-responsive optimizations.
+
+## Status: Phase 5 Complete. App Ready for Rollout.
