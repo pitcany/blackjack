@@ -388,26 +388,132 @@ export class GameEngine {
             else action = BASIC_STRATEGY.hard[total] ? BASIC_STRATEGY.hard[total][dealerVal] : Action.HIT;
         }
         
-        // DEVIATIONS
+        // DEVIATIONS - The Illustrious 18 + Fab Four
         const tc = this.getTrueCount();
-        
-        // 16 vs 10 TC >= 0
-        if (hand.value === 16 && dealerVal === 10 && !hand.isSoft && !hand.isPair && tc >= 0) {
-            action = Action.STAND;
-            reason = "Stand on 16 vs 10 (TC >= 0)";
+        const pv = hand.value;
+
+        // Only apply deviations to non-soft, non-pair hands (except specific cases)
+        if (!hand.isSoft && !hand.isPair) {
+            // === ILLUSTRIOUS 18 - Standing Deviations ===
+
+            // #2: 16 vs 10 - Stand at TC >= 0 (normally hit)
+            if (pv === 16 && dealerVal === 10 && tc >= 0) {
+                action = Action.STAND;
+                reason = "I18 #2: Stand 16 vs 10 (TC >= 0)";
+            }
+            // #3: 15 vs 10 - Stand at TC >= +4 (normally hit)
+            else if (pv === 15 && dealerVal === 10 && tc >= 4) {
+                action = Action.STAND;
+                reason = "I18 #3: Stand 15 vs 10 (TC >= +4)";
+            }
+            // #11: 16 vs 9 - Stand at TC >= +5 (normally hit)
+            else if (pv === 16 && dealerVal === 9 && tc >= 5) {
+                action = Action.STAND;
+                reason = "I18 #11: Stand 16 vs 9 (TC >= +5)";
+            }
+            // #5: 12 vs 3 - Stand at TC >= +2 (normally hit)
+            else if (pv === 12 && dealerVal === 3 && tc >= 2) {
+                action = Action.STAND;
+                reason = "I18 #5: Stand 12 vs 3 (TC >= +2)";
+            }
+            // #6: 12 vs 2 - Stand at TC >= +3 (normally hit)
+            else if (pv === 12 && dealerVal === 2 && tc >= 3) {
+                action = Action.STAND;
+                reason = "I18 #6: Stand 12 vs 2 (TC >= +3)";
+            }
+            // 13 vs 2 - Stand at TC >= -1 (normally stand, hit at very negative)
+            else if (pv === 13 && dealerVal === 2 && tc < -1) {
+                action = Action.HIT;
+                reason = "I18: Hit 13 vs 2 (TC < -1)";
+            }
+            // 13 vs 3 - Stand at TC >= -2
+            else if (pv === 13 && dealerVal === 3 && tc < -2) {
+                action = Action.HIT;
+                reason = "I18: Hit 13 vs 3 (TC < -2)";
+            }
+            // 12 vs 4 - Stand at TC >= 0
+            else if (pv === 12 && dealerVal === 4 && tc < 0) {
+                action = Action.HIT;
+                reason = "I18: Hit 12 vs 4 (TC < 0)";
+            }
+            // 12 vs 5 - Stand at TC >= -2
+            else if (pv === 12 && dealerVal === 5 && tc < -2) {
+                action = Action.HIT;
+                reason = "I18: Hit 12 vs 5 (TC < -2)";
+            }
+            // 12 vs 6 - Stand at TC >= -1
+            else if (pv === 12 && dealerVal === 6 && tc < -1) {
+                action = Action.HIT;
+                reason = "I18: Hit 12 vs 6 (TC < -1)";
+            }
+
+            // === ILLUSTRIOUS 18 - Doubling Deviations ===
+
+            // #4: 10 vs 10 - Double at TC >= +4 (normally hit)
+            else if (pv === 10 && dealerVal === 10 && tc >= 4) {
+                action = Action.DOUBLE;
+                reason = "I18 #4: Double 10 vs 10 (TC >= +4)";
+            }
+            // #7: 11 vs A - Double at TC >= +1 (normally hit)
+            else if (pv === 11 && dealerVal === 11 && tc >= 1) {
+                action = Action.DOUBLE;
+                reason = "I18 #7: Double 11 vs A (TC >= +1)";
+            }
+            // #8: 9 vs 2 - Double at TC >= +1 (normally hit)
+            else if (pv === 9 && dealerVal === 2 && tc >= 1) {
+                action = Action.DOUBLE;
+                reason = "I18 #8: Double 9 vs 2 (TC >= +1)";
+            }
+            // #9: 10 vs A - Double at TC >= +4 (normally hit)
+            else if (pv === 10 && dealerVal === 11 && tc >= 4) {
+                action = Action.DOUBLE;
+                reason = "I18 #9: Double 10 vs A (TC >= +4)";
+            }
+            // #10: 9 vs 7 - Double at TC >= +3 (normally hit)
+            else if (pv === 9 && dealerVal === 7 && tc >= 3) {
+                action = Action.DOUBLE;
+                reason = "I18 #10: Double 9 vs 7 (TC >= +3)";
+            }
+
+            // === FAB FOUR - Surrender Deviations ===
+
+            // Fab 4 #1: 14 vs 10 - Surrender at TC >= +3
+            else if (pv === 14 && dealerVal === 10 && tc >= 3) {
+                action = Action.SURRENDER;
+                reason = "Fab4 #1: Surrender 14 vs 10 (TC >= +3)";
+            }
+            // Fab 4 #2: 15 vs 10 - Surrender at TC >= 0
+            else if (pv === 15 && dealerVal === 10 && tc >= 0) {
+                action = Action.SURRENDER;
+                reason = "Fab4 #2: Surrender 15 vs 10 (TC >= 0)";
+            }
+            // Fab 4 #3: 15 vs 9 - Surrender at TC >= +2
+            else if (pv === 15 && dealerVal === 9 && tc >= 2) {
+                action = Action.SURRENDER;
+                reason = "Fab4 #3: Surrender 15 vs 9 (TC >= +2)";
+            }
+            // Fab 4 #4: 15 vs A - Surrender at TC >= +1
+            else if (pv === 15 && dealerVal === 11 && tc >= 1) {
+                action = Action.SURRENDER;
+                reason = "Fab4 #4: Surrender 15 vs A (TC >= +1)";
+            }
         }
-        // 15 vs 10 TC >= 4
-        if (hand.value === 15 && dealerVal === 10 && !hand.isSoft && tc >= 4) {
-             action = Action.STAND;
-             reason = "Stand on 15 vs 10 (TC >= +4)";
+
+        // === ILLUSTRIOUS 18 - Pair Splitting Deviations ===
+        if (hand.isPair) {
+            const pairVal = hand.cards[0].value;
+            // 10-10 vs 5 - Split at TC >= +5 (normally stand)
+            if (pairVal === 10 && dealerVal === 5 && tc >= 5) {
+                action = Action.SPLIT;
+                reason = "I18: Split 10s vs 5 (TC >= +5)";
+            }
+            // 10-10 vs 6 - Split at TC >= +4 (normally stand)
+            else if (pairVal === 10 && dealerVal === 6 && tc >= 4) {
+                action = Action.SPLIT;
+                reason = "I18: Split 10s vs 6 (TC >= +4)";
+            }
         }
-        
-        // 12 vs 3 TC >= 2
-        if (hand.value === 12 && dealerVal === 3 && !hand.isSoft && tc >= 2) {
-            action = Action.STAND;
-            reason = "Stand on 12 vs 3 (TC >= +2)";
-        }
-        
+
         return { action, reason };
     }
     
