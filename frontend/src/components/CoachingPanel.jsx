@@ -80,17 +80,20 @@ export function CoachingPanel() {
   });
   const [showAnswer, setShowAnswer] = useState(false);
 
-  const refreshData = useCallback(() => {
+  // Load data on mount and when needed
+  useEffect(() => {
     const strategyStats = loadStrategyStats();
     const analyzed = analyzeWeaknesses(strategyStats);
     setWeaknesses(analyzed);
     setPerformanceStats(getPerformanceStats());
   }, []);
 
-  // Load data on mount
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+  const refreshData = useCallback(() => {
+    const strategyStats = loadStrategyStats();
+    const analyzed = analyzeWeaknesses(strategyStats);
+    setWeaknesses(analyzed);
+    setPerformanceStats(getPerformanceStats());
+  }, []);
 
   // Start a training session
   const startSession = useCallback((options = {}) => {
