@@ -236,6 +236,8 @@ export function calculatePayout(outcome, bet, config) {
     case Outcome.LOSE:
     case Outcome.BUST:
       return -bet;
+    case Outcome.SURRENDER:
+      return -Math.floor(bet / 2); // Lose half the bet
     case Outcome.PUSH:
     default:
       return 0;
