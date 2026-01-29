@@ -30,51 +30,55 @@ def dealer_should_hit(dealer_cards: List[Card], config: GameConfig) -> bool:
 
 
 def compare_hands(
-    player_cards: List[Card], 
-    dealer_cards: List[Card], 
-    config: GameConfig
+    player_cards: List[Card],
+    dealer_cards: List[Card],
+    config: GameConfig,
+    is_split_hand: bool = False
 ) -> Outcome:
     """
     Compare player hand to dealer hand and determine outcome.
-    
+
     Assumes dealer has finished drawing. Handles busts.
-    
+
     Args:
         player_cards: Player's cards
         dealer_cards: Dealer's cards
         config: Game configuration
-        
+        is_split_hand: Whether this hand resulted from a split.
+                       A 21 from a split is not a natural blackjack.
+
     Returns:
         Outcome of the hand
     """
     player_total, _ = best_total_and_soft(player_cards)
     dealer_total, _ = best_total_and_soft(dealer_cards)
-    
-    player_bj = is_blackjack(player_cards)
+
+    # A 2-card 21 from a split is NOT a natural blackjack
+    player_bj = is_blackjack(player_cards) and not is_split_hand
     dealer_bj = is_blackjack(dealer_cards)
     player_bust = is_bust(player_cards)
     dealer_bust = is_bust(dealer_cards)
-    
+
     # Player bust always loses
     if player_bust:
         return Outcome.BUST
-    
+
     # Both have blackjack - push
     if player_bj and dealer_bj:
         return Outcome.PUSH
-    
+
     # Only player has blackjack
     if player_bj:
         return Outcome.BLACKJACK
-    
+
     # Only dealer has blackjack
     if dealer_bj:
         return Outcome.LOSE
-    
+
     # Dealer busts - player wins
     if dealer_bust:
         return Outcome.WIN
-    
+
     # Compare totals
     if player_total > dealer_total:
         return Outcome.WIN

@@ -18,7 +18,6 @@ class GameConfig:
     split_aces_one_card_only: bool = True
     max_splits: int = 3
     insurance_pays: float = 2.0
-    allow_surrender: bool = False
     penetration: float = 0.75  # Reshuffle at 75% dealt
     allow_split_by_value: bool = False  # Default: same rank only for split
 

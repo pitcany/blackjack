@@ -71,6 +71,11 @@ class BlackjackEngine:
         Returns:
             True if round started successfully
         """
+        # Must be in betting phase
+        if self.state.phase != GamePhase.BETTING:
+            self.state.message = "Cannot start a new round now"
+            return False
+
         # Validate bet
         if bet < self.config.min_bet:
             self.state.message = f"Minimum bet is ${self.config.min_bet}"
@@ -119,10 +124,11 @@ class BlackjackEngine:
         player_hand.cards.append(self.shoe.draw())
         self.state.dealer_cards.append(self.shoe.draw())
         
-        # Update running count for dealt cards
-        all_dealt = player_hand.cards + self.state.dealer_cards
+        # Update running count for visible cards only
+        # (player cards + dealer upcard; hole card counted at dealer turn)
+        visible_cards = player_hand.cards + [self.state.dealer_cards[0]]
         self.state.running_count = update_running_count(
-            self.state.running_count, all_dealt
+            self.state.running_count, visible_cards
         )
         self.state.decks_remaining_estimate = self.shoe.decks_remaining_estimate()
         
@@ -140,17 +146,20 @@ class BlackjackEngine:
         
         # Check for immediate resolution
         if player_bj and dealer_bj:
-            # Both have blackjack - push
+            # Both have blackjack - push (hole card revealed)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.PUSH)
             self._finish_round()
             self.state.message = "Both Blackjack! Push"
         elif player_bj:
-            # Player blackjack wins
+            # Player blackjack wins (hole card revealed to confirm no dealer BJ)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.BLACKJACK)
             self._finish_round()
             self.state.message = "Blackjack! You win!"
         elif dealer_bj:
-            # Dealer blackjack
+            # Dealer blackjack (hole card revealed)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.LOSE)
             self._finish_round()
             self.state.message = "Dealer has Blackjack!"
@@ -181,6 +190,9 @@ class BlackjackEngine:
                 self.state.insurance_bet = insurance_bet
                 self.stats.insurance_taken += 1
         
+        # Hole card revealed during insurance resolution
+        self._count_hole_card()
+
         if dealer_bj:
             # Dealer has blackjack
             if take and self.state.insurance_bet > 0:
@@ -264,17 +276,21 @@ class BlackjackEngine:
     def act(self, action: Action) -> None:
         """
         Perform an action on the current active hand.
-        
+
         Args:
             action: The action to perform
         """
         if self.state.phase != GamePhase.PLAYER_TURN:
             return
-        
+
         hand = self.active_hand()
         if hand is None:
             return
-        
+
+        if action not in self.available_actions():
+            self.state.message = f"Action {action.name} is not available"
+            return
+
         if action == Action.HIT:
             self._do_hit(hand)
         elif action == Action.STAND:
@@ -378,6 +394,14 @@ class BlackjackEngine:
         else:
             self.state.message = "Split! Playing first hand"
     
+    def _count_hole_card(self) -> None:
+        """Count the dealer's hole card in the running count when revealed."""
+        if len(self.state.dealer_cards) >= 2:
+            hole_card = self.state.dealer_cards[1]
+            self.state.running_count = update_running_count(
+                self.state.running_count, [hole_card]
+            )
+
     def _advance_to_next_hand(self) -> None:
         """Move to the next unresolved hand or dealer turn."""
         # Find next unresolved hand after the current one
@@ -399,17 +423,20 @@ class BlackjackEngine:
     def _dealer_turn(self) -> None:
         """Execute dealer's turn."""
         self.state.phase = GamePhase.DEALER_TURN
-        
-        # Check if all player hands busted
-        all_busted = all(
-            is_bust(h.cards) or h.resolved 
+
+        # Count the dealer's hole card now that it's revealed
+        self._count_hole_card()
+
+        # Check if all player hands busted/resolved
+        all_done = all(
+            is_bust(h.cards) or h.resolved
             for h in self.state.player_hands
         )
-        
-        if all_busted:
+
+        if all_done:
             self._resolve_all_hands()
             return
-        
+
         # Dealer draws until standing
         while dealer_should_hit(self.state.dealer_cards, self.config):
             card = self.shoe.draw()
@@ -454,7 +481,10 @@ class BlackjackEngine:
             if hand.resolved:
                 continue
             
-            outcome = compare_hands(hand.cards, self.state.dealer_cards, self.config)
+            outcome = compare_hands(
+                hand.cards, self.state.dealer_cards, self.config,
+                is_split_hand=hand.is_split_child
+            )
             self._resolve_hand(hand, outcome)
             
             player_total, _ = best_total_and_soft(hand.cards)
