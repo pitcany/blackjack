@@ -119,6 +119,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ PASSED - All betting chips ($10, $25, $50, $100, $250) are visible and functional. Deal Cards button works correctly. Bankroll updates properly from $1000 to $975 after $25 bet. Cards are displayed after dealing (20 cards visible)."
+      - working: true
+        agent: "testing"
+        comment: "✅ NEW FEATURES VERIFIED - Penetration bar visible and updating (3% shown), True Count badge displays correctly (TC: -0.7), Running Count badge working (RC: -4), bankroll change animation visible (-25), keyboard shortcuts working (H/S/D/R keys), all action buttons present with keyboard hints."
 
   - task: "Blackjack Game Actions - Hit, Stand, Double, Split"
     implemented: true
