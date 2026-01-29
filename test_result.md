@@ -202,17 +202,14 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Blackjack Game Mode - Betting and Deal Cards"
-    - "Blackjack Game Actions - Hit, Stand, Double, Split"
-    - "Running Count Display and Updates"
+  current_focus: []
+  stuck_tasks:
     - "Card Counting Training Mode"
-    - "Settings Dialog Functionality"
-    - "Navigation Between Tabs"
-  stuck_tasks: []
-  test_all: true
-  test_priority: "high_first"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "testing"
     message: "Starting comprehensive testing of Blackjack Trainer application. Will test all major features including game modes, settings, and navigation."
+  - agent: "testing"
+    message: "TESTING COMPLETED - Most features working correctly. CRITICAL ISSUE: Card Counting Training Mode is not functional - cards are not displayed and input fields are missing. All other features (Blackjack game, settings, navigation) are working properly."
