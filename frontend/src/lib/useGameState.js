@@ -1,8 +1,7 @@
 // Game state management with React hooks
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Shoe,
-  Card,
   GamePhase,
   Outcome,
   calculateHandTotal,
@@ -14,33 +13,83 @@ import {
   calculatePayout,
   updateRunningCount,
   defaultConfig,
-  Rank
+  Rank,
+  trueCount
 } from './gameLogic';
+import {
+  saveGameState,
+  loadGameState,
+  saveGameStats,
+  loadGameStats,
+  saveGameConfig,
+  loadGameConfig,
+  addHandToHistory,
+  saveStrategyStats,
+  loadStrategyStats
+} from './storage';
+import { getOptimalAction, evaluateAction } from './basicStrategy';
 
 export function useBlackjackGame(initialConfig = defaultConfig) {
-  const [config, setConfig] = useState(initialConfig);
+  // Load saved config or use initial
+  const savedConfig = loadGameConfig();
+  const [config, setConfig] = useState(savedConfig || initialConfig);
   const shoeRef = useRef(new Shoe(config.numDecks, config.penetration));
   
+  // Load saved state or use defaults
+  const savedState = loadGameState();
   const [gameState, setGameState] = useState({
-    bankroll: config.startingBankroll,
+    bankroll: savedState?.bankroll || config.startingBankroll,
     currentBet: 0,
     playerHands: [],
     dealerCards: [],
     phase: GamePhase.BETTING,
     message: 'Place your bet to begin',
-    runningCount: 0,
+    runningCount: savedState?.runningCount || 0,
     activeHandIndex: 0,
     insuranceBet: 0,
-    splitCount: 0
+    splitCount: 0,
+    lastAction: null,
+    lastActionCorrect: null,
+    optimalAction: null
   });
 
-  const [stats, setStats] = useState({
+  // Load saved stats
+  const savedStats = loadGameStats();
+  const [stats, setStats] = useState(savedStats || {
     handsPlayed: 0,
     handsWon: 0,
     handsLost: 0,
     blackjacks: 0,
-    pushes: 0
+    pushes: 0,
+    surrenders: 0,
+    totalWagered: 0,
+    totalWon: 0
   });
+
+  // Load strategy stats
+  const savedStrategyStats = loadStrategyStats();
+  const [strategyStats, setStrategyStats] = useState(savedStrategyStats || {
+    totalDecisions: 0,
+    correctDecisions: 0,
+    mistakes: {}
+  });
+
+  // Save state and stats when they change
+  useEffect(() => {
+    saveGameState({ bankroll: gameState.bankroll, runningCount: gameState.runningCount });
+  }, [gameState.bankroll, gameState.runningCount]);
+
+  useEffect(() => {
+    saveGameStats(stats);
+  }, [stats]);
+
+  useEffect(() => {
+    saveStrategyStats(strategyStats);
+  }, [strategyStats]);
+
+  useEffect(() => {
+    saveGameConfig(config);
+  }, [config]);
 
   // Reset game
   const resetGame = useCallback(() => {
