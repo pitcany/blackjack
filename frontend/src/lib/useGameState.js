@@ -18,7 +18,7 @@ import {
   defaultConfig,
   Rank
 } from './gameLogic';
-import { getBasicStrategy, getDeviation, shouldTakeInsurance } from './basicStrategy';
+import { getBasicStrategy, getDeviation } from './basicStrategy';
 
 // localStorage keys
 const LS_CONFIG = 'bj_config';
@@ -92,7 +92,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     if (!hand || hand.resolved) return null;
 
     const { total, isSoft } = calculateHandTotal(hand.cards);
-    const isPair = hand.cards.length === 2 && (hand.cards[0].rank === hand.cards[1].rank || (hand.cards[0].value === 10 && hand.cards[1].value === 10));
+    const isPair = canSplit(hand.cards);
     const pairValue = isPair ? hand.cards[0].value : 0;
     const dealerUpcard = gameState.dealerCards[0]?.value || 10;
 
@@ -122,7 +122,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     if (!hand || hand.resolved) return null;
 
     const { total, isSoft } = calculateHandTotal(hand.cards);
-    const isPair = hand.cards.length === 2 && (hand.cards[0].rank === hand.cards[1].rank || (hand.cards[0].value === 10 && hand.cards[1].value === 10));
+    const isPair = canSplit(hand.cards);
     const dealerUpcard = gameState.dealerCards[0]?.value || 10;
     const tc = trueCount(gameState.runningCount, shoeRef.current.decksRemaining());
 
@@ -848,7 +848,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
   const decksRemaining = shoeRef.current.decksRemaining();
   const tc = trueCount(gameState.runningCount, decksRemaining);
-  const insuranceDeviation = shouldTakeInsurance(tc);
 
   return {
     gameState,
@@ -875,7 +874,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     getDeviationInfo,
     decksRemaining,
     trueCount: tc,
-    insuranceDeviation,
   };
 }
 
