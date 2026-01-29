@@ -46,7 +46,6 @@ class Action(Enum):
     DOUBLE = auto()
     SPLIT = auto()
     INSURANCE = auto()
-    SURRENDER = auto()
 
 
 class GamePhase(Enum):

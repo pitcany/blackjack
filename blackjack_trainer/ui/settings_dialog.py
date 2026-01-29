@@ -1,7 +1,7 @@
 """Settings dialog for configuring game options."""
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Callable
 
 from .theme import Theme
@@ -218,14 +218,19 @@ class SettingsDialog:
                 num_decks=int(self.decks_var.get()),
                 starting_bankroll=int(self.bankroll_var.get()),
                 min_bet=int(self.min_bet_var.get()),
+                max_bet=self.config.max_bet,
                 penetration=int(self.penetration_var.get()) / 100.0,
                 dealer_hits_soft_17=self.h17_var.get(),
-                double_after_split=self.das_var.get()
+                double_after_split=self.das_var.get(),
+                split_aces_one_card_only=self.config.split_aces_one_card_only,
+                max_splits=self.config.max_splits,
+                insurance_pays=self.config.insurance_pays,
+                allow_split_by_value=self.config.allow_split_by_value,
             )
             self.on_apply(new_config)
             self.dialog.destroy()
-        except ValueError as e:
-            tk.messagebox.showerror("Invalid Value", str(e))
+        except (ValueError, TypeError) as e:
+            messagebox.showerror("Invalid Value", str(e))
     
     def _cancel(self) -> None:
         """Cancel and close dialog."""

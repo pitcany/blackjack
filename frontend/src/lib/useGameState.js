@@ -198,8 +198,12 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     const shoe = shoeRef.current;
     
     setGameState(prev => {
-      const playerCards = [shoe.draw(), shoe.draw()];
-      const dealerCards = [shoe.draw(), shoe.draw()];
+      const pCard1 = shoe.draw();
+      const dCard1 = shoe.draw();
+      const pCard2 = shoe.draw();
+      const dCard2 = shoe.draw();
+      const playerCards = [pCard1, pCard2];
+      const dealerCards = [dCard1, dCard2];
       
       const newPlayerHands = [{
         ...prev.playerHands[0],

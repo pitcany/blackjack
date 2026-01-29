@@ -1,7 +1,12 @@
 """Statistics tracking for Blackjack and training sessions."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .outcomes import Outcome
 
 
 @dataclass
@@ -26,38 +31,42 @@ class BlackjackStats:
     lowest_bankroll: int = 0
     
     def update_for_outcome(
-        self, 
-        outcome: str, 
-        bet: int, 
+        self,
+        outcome: Outcome,
+        bet: int,
         profit: int,
         is_doubled: bool = False,
         is_split: bool = False
     ) -> None:
         """Update stats after a hand completes."""
+        from .outcomes import Outcome as _Outcome
+
         self.hands_played += 1
         self.total_wagered += bet
-        
-        if outcome == "BLACKJACK":
+
+        if outcome == _Outcome.BLACKJACK:
             self.hands_won += 1
             self.blackjacks += 1
             self.total_won += profit
-        elif outcome == "WIN":
+        elif outcome == _Outcome.WIN:
             self.hands_won += 1
             self.total_won += profit
             if is_doubled:
                 self.doubles_won += 1
-        elif outcome == "LOSE":
+        elif outcome == _Outcome.LOSE:
             self.hands_lost += 1
             self.total_lost += abs(profit)
             if is_doubled:
                 self.doubles_lost += 1
-        elif outcome == "BUST":
+        elif outcome == _Outcome.BUST:
             self.hands_lost += 1
             self.busts += 1
             self.total_lost += abs(profit)
-        elif outcome == "PUSH":
+            if is_doubled:
+                self.doubles_lost += 1
+        elif outcome == _Outcome.PUSH:
             self.hands_pushed += 1
-        
+
         if is_split:
             self.splits_played += 1
     

@@ -257,8 +257,8 @@ class BlackjackScreen(tk.Frame):
         
         if self.engine.start_round(bet):
             self.engine.deal_initial()
-            self._refresh_display()
-            self.on_update()
+        self._refresh_display()
+        self.on_update()
     
     def _do_action(self, action: Action) -> None:
         """Perform a game action."""

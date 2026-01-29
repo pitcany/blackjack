@@ -41,8 +41,10 @@ class BlackjackEngine:
         )
         self.state = TableState(bankroll=self.config.starting_bankroll)
         self.stats = BlackjackStats()
+        self.stats.update_bankroll_extremes(self.state.bankroll)
         self._next_hand_id = 0
-    
+        self._hole_card_counted = False
+
     def new_session(self) -> None:
         """Reset everything for a new session."""
         self.shoe = Shoe(
@@ -53,6 +55,7 @@ class BlackjackEngine:
         self.stats = BlackjackStats()
         self.stats.update_bankroll_extremes(self.state.bankroll)
         self._next_hand_id = 0
+        self._hole_card_counted = False
     
     def _create_hand(self, bet: int) -> PlayerHandState:
         """Create a new player hand."""
@@ -70,11 +73,28 @@ class BlackjackEngine:
         Returns:
             True if round started successfully
         """
-        # Validate bet
+        # Must be in betting phase
+        if self.state.phase != GamePhase.BETTING:
+            self.state.message = "Cannot start a new round now"
+            return False
+
+        # Validate bet type and value
+        if not isinstance(bet, int) or isinstance(bet, bool):
+            self.state.message = "Bet must be a whole number"
+            return False
+
+        if bet <= 0:
+            self.state.message = "Bet must be positive"
+            return False
+
         if bet < self.config.min_bet:
             self.state.message = f"Minimum bet is ${self.config.min_bet}"
             return False
         
+        if bet > self.config.max_bet:
+            self.state.message = f"Maximum bet is ${self.config.max_bet}"
+            return False
+
         if bet > self.state.bankroll:
             self.state.message = "Insufficient bankroll"
             return False
@@ -98,7 +118,8 @@ class BlackjackEngine:
         self.state.active_hand_index = 0
         self.state.split_count = 0
         self.state.message = "Dealing..."
-        
+        self._hole_card_counted = False
+
         return True
     
     def deal_initial(self) -> None:
@@ -109,15 +130,16 @@ class BlackjackEngine:
         # Deal 2 cards to player, 2 to dealer
         player_hand = self.state.player_hands[0]
         
-        player_hand.cards.append(self.shoe.draw())
-        self.state.dealer_cards.append(self.shoe.draw())
-        player_hand.cards.append(self.shoe.draw())
-        self.state.dealer_cards.append(self.shoe.draw())
+        player_hand.cards.append(self._draw())
+        self.state.dealer_cards.append(self._draw())
+        player_hand.cards.append(self._draw())
+        self.state.dealer_cards.append(self._draw())
         
-        # Update running count for dealt cards
-        all_dealt = player_hand.cards + self.state.dealer_cards
+        # Update running count for visible cards only
+        # (player cards + dealer upcard; hole card counted at dealer turn)
+        visible_cards = player_hand.cards + [self.state.dealer_cards[0]]
         self.state.running_count = update_running_count(
-            self.state.running_count, all_dealt
+            self.state.running_count, visible_cards
         )
         self.state.decks_remaining_estimate = self.shoe.decks_remaining_estimate()
         
@@ -135,17 +157,20 @@ class BlackjackEngine:
         
         # Check for immediate resolution
         if player_bj and dealer_bj:
-            # Both have blackjack - push
+            # Both have blackjack - push (hole card revealed)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.PUSH)
             self._finish_round()
             self.state.message = "Both Blackjack! Push"
         elif player_bj:
-            # Player blackjack wins
+            # Player blackjack wins (hole card revealed to confirm no dealer BJ)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.BLACKJACK)
             self._finish_round()
             self.state.message = "Blackjack! You win!"
         elif dealer_bj:
-            # Dealer blackjack
+            # Dealer blackjack (hole card revealed)
+            self._count_hole_card()
             self._resolve_hand(player_hand, Outcome.LOSE)
             self._finish_round()
             self.state.message = "Dealer has Blackjack!"
@@ -176,6 +201,9 @@ class BlackjackEngine:
                 self.state.insurance_bet = insurance_bet
                 self.stats.insurance_taken += 1
         
+        # Hole card revealed during insurance resolution
+        self._count_hole_card()
+
         if dealer_bj:
             # Dealer has blackjack
             if take and self.state.insurance_bet > 0:
@@ -259,17 +287,21 @@ class BlackjackEngine:
     def act(self, action: Action) -> None:
         """
         Perform an action on the current active hand.
-        
+
         Args:
             action: The action to perform
         """
         if self.state.phase != GamePhase.PLAYER_TURN:
             return
-        
+
         hand = self.active_hand()
         if hand is None:
             return
-        
+
+        if action not in self.available_actions():
+            self.state.message = f"Action {action.name} is not available"
+            return
+
         if action == Action.HIT:
             self._do_hit(hand)
         elif action == Action.STAND:
@@ -281,7 +313,7 @@ class BlackjackEngine:
     
     def _do_hit(self, hand: PlayerHandState) -> None:
         """Hit - draw one card."""
-        card = self.shoe.draw()
+        card = self._draw()
         hand.cards.append(card)
         self.state.running_count = update_running_count(
             self.state.running_count, [card]
@@ -314,7 +346,7 @@ class BlackjackEngine:
         hand.is_doubled = True
         
         # Draw exactly one card
-        card = self.shoe.draw()
+        card = self._draw()
         hand.cards.append(card)
         self.state.running_count = update_running_count(
             self.state.running_count, [card]
@@ -349,8 +381,8 @@ class BlackjackEngine:
         hand.is_split_child = True
         
         # Deal one card to each hand
-        card1 = self.shoe.draw()
-        card2 = self.shoe.draw()
+        card1 = self._draw()
+        card2 = self._draw()
         hand.cards.append(card1)
         new_hand.cards.append(card2)
         
@@ -373,10 +405,35 @@ class BlackjackEngine:
         else:
             self.state.message = "Split! Playing first hand"
     
+    def _count_hole_card(self) -> None:
+        """Count the dealer's hole card in the running count when revealed.
+
+        Idempotent: only counts the hole card once per round, even if
+        called from multiple code paths (insurance + dealer turn).
+        """
+        if self._hole_card_counted:
+            return
+        if len(self.state.dealer_cards) >= 2:
+            hole_card = self.state.dealer_cards[1]
+            self.state.running_count = update_running_count(
+                self.state.running_count, [hole_card]
+            )
+            self._hole_card_counted = True
+
+    def _draw(self) -> Card:
+        """Draw a card, resetting running count if the shoe auto-reshuffled."""
+        card = self.shoe.draw()
+        if self.shoe.reshuffled:
+            self.state.running_count = 0
+            self.shoe.reshuffled = False
+        return card
+
     def _advance_to_next_hand(self) -> None:
         """Move to the next unresolved hand or dealer turn."""
-        # Find next unresolved hand
-        for i, hand in enumerate(self.state.player_hands):
+        # Find next unresolved hand after the current one
+        start = self.state.active_hand_index + 1
+        for i in range(start, len(self.state.player_hands)):
+            hand = self.state.player_hands[i]
             if not hand.resolved and not is_bust(hand.cards):
                 # Check if this hand can still act
                 if hand.is_split_child and hand.cards[0].rank == Rank.ACE:
@@ -392,20 +449,23 @@ class BlackjackEngine:
     def _dealer_turn(self) -> None:
         """Execute dealer's turn."""
         self.state.phase = GamePhase.DEALER_TURN
-        
-        # Check if all player hands busted
-        all_busted = all(
-            is_bust(h.cards) or h.resolved 
+
+        # Count the dealer's hole card now that it's revealed
+        self._count_hole_card()
+
+        # Check if all player hands busted/resolved
+        all_done = all(
+            is_bust(h.cards) or h.resolved
             for h in self.state.player_hands
         )
-        
-        if all_busted:
+
+        if all_done:
             self._resolve_all_hands()
             return
-        
+
         # Dealer draws until standing
         while dealer_should_hit(self.state.dealer_cards, self.config):
-            card = self.shoe.draw()
+            card = self._draw()
             self.state.dealer_cards.append(card)
             self.state.running_count = update_running_count(
                 self.state.running_count, [card]
@@ -423,7 +483,7 @@ class BlackjackEngine:
         profit = payout_for_outcome(outcome, hand.bet, self.config)
         
         # Return bet + profit to bankroll
-        if outcome in (Outcome.WIN, Outcome.BLACKJACK, Outcome.PUSH):
+        if outcome in (Outcome.WIN, Outcome.BLACKJACK):
             self.state.bankroll += hand.bet + profit
         elif outcome == Outcome.PUSH:
             self.state.bankroll += hand.bet
@@ -431,8 +491,8 @@ class BlackjackEngine:
         
         # Update stats
         self.stats.update_for_outcome(
-            outcome.name, 
-            hand.bet, 
+            outcome,
+            hand.bet,
             profit,
             is_doubled=hand.is_doubled,
             is_split=hand.is_split_child
@@ -447,7 +507,10 @@ class BlackjackEngine:
             if hand.resolved:
                 continue
             
-            outcome = compare_hands(hand.cards, self.state.dealer_cards, self.config)
+            outcome = compare_hands(
+                hand.cards, self.state.dealer_cards, self.config,
+                is_split_hand=hand.is_split_child
+            )
             self._resolve_hand(hand, outcome)
             
             player_total, _ = best_total_and_soft(hand.cards)
@@ -457,10 +520,13 @@ class BlackjackEngine:
                 messages.append(str(outcome))
         
         self._finish_round()
-        
+
+        dealer_bust = " (Dealer busts!)" if is_bust(self.state.dealer_cards) else ""
         if messages:
-            dealer_bust = " (Dealer busts!)" if is_bust(self.state.dealer_cards) else ""
             self.state.message = f"Dealer: {dealer_total}{dealer_bust}. " + ", ".join(messages)
+        else:
+            # All hands were already resolved (e.g., all busted)
+            self.state.message = f"Dealer: {dealer_total}{dealer_bust}. All hands resolved."
     
     def _finish_round(self) -> None:
         """Finish the round and update state."""
@@ -472,7 +538,9 @@ class BlackjackEngine:
             hand.is_active = False
     
     def next_round(self) -> None:
-        """Reset for the next round."""
+        """Reset for the next round. Only valid after a round completes."""
+        if self.state.phase != GamePhase.ROUND_OVER:
+            return
         self.state.player_hands = []
         self.state.dealer_cards = []
         self.state.current_bet = 0
