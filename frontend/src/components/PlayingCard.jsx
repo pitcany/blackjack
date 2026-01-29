@@ -151,7 +151,8 @@ export function HandDisplay({
           result === 'BLACKJACK' && 'bg-primary/20 text-primary',
           result === 'LOSE' && 'bg-destructive/20 text-destructive',
           result === 'BUST' && 'bg-destructive/20 text-destructive',
-          result === 'PUSH' && 'bg-muted text-muted-foreground'
+          result === 'PUSH' && 'bg-muted text-muted-foreground',
+          result === 'SURRENDER' && 'bg-warning/20 text-warning'
         )}>
           {result}
         </div>
