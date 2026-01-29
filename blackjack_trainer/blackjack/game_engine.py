@@ -43,7 +43,8 @@ class BlackjackEngine:
         self.stats = BlackjackStats()
         self.stats.update_bankroll_extremes(self.state.bankroll)
         self._next_hand_id = 0
-    
+        self._hole_card_counted = False
+
     def new_session(self) -> None:
         """Reset everything for a new session."""
         self.shoe = Shoe(
@@ -54,6 +55,7 @@ class BlackjackEngine:
         self.stats = BlackjackStats()
         self.stats.update_bankroll_extremes(self.state.bankroll)
         self._next_hand_id = 0
+        self._hole_card_counted = False
     
     def _create_hand(self, bet: int) -> PlayerHandState:
         """Create a new player hand."""
@@ -116,7 +118,8 @@ class BlackjackEngine:
         self.state.active_hand_index = 0
         self.state.split_count = 0
         self.state.message = "Dealing..."
-        
+        self._hole_card_counted = False
+
         return True
     
     def deal_initial(self) -> None:
@@ -403,12 +406,19 @@ class BlackjackEngine:
             self.state.message = "Split! Playing first hand"
     
     def _count_hole_card(self) -> None:
-        """Count the dealer's hole card in the running count when revealed."""
+        """Count the dealer's hole card in the running count when revealed.
+
+        Idempotent: only counts the hole card once per round, even if
+        called from multiple code paths (insurance + dealer turn).
+        """
+        if self._hole_card_counted:
+            return
         if len(self.state.dealer_cards) >= 2:
             hole_card = self.state.dealer_cards[1]
             self.state.running_count = update_running_count(
                 self.state.running_count, [hole_card]
             )
+            self._hole_card_counted = True
 
     def _advance_to_next_hand(self) -> None:
         """Move to the next unresolved hand or dealer turn."""
@@ -473,8 +483,8 @@ class BlackjackEngine:
         
         # Update stats
         self.stats.update_for_outcome(
-            outcome.name, 
-            hand.bet, 
+            outcome,
+            hand.bet,
             profit,
             is_doubled=hand.is_doubled,
             is_split=hand.is_split_child
@@ -502,10 +512,13 @@ class BlackjackEngine:
                 messages.append(str(outcome))
         
         self._finish_round()
-        
+
+        dealer_bust = " (Dealer busts!)" if is_bust(self.state.dealer_cards) else ""
         if messages:
-            dealer_bust = " (Dealer busts!)" if is_bust(self.state.dealer_cards) else ""
             self.state.message = f"Dealer: {dealer_total}{dealer_bust}. " + ", ".join(messages)
+        else:
+            # All hands were already resolved (e.g., all busted)
+            self.state.message = f"Dealer: {dealer_total}{dealer_bust}. All hands resolved."
     
     def _finish_round(self) -> None:
         """Finish the round and update state."""
@@ -517,7 +530,9 @@ class BlackjackEngine:
             hand.is_active = False
     
     def next_round(self) -> None:
-        """Reset for the next round."""
+        """Reset for the next round. Only valid after a round completes."""
+        if self.state.phase != GamePhase.ROUND_OVER:
+            return
         self.state.player_hands = []
         self.state.dealer_cards = []
         self.state.current_bet = 0

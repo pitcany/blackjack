@@ -311,3 +311,167 @@ class TestInsuranceBankroll:
 
         # Insurance bet should be 0 since we can't afford it
         assert engine.state.insurance_bet == 0
+
+
+class TestHoleCardDoubleCount:
+    """Tests for hole card not being double-counted after insurance."""
+
+    def test_hole_card_not_double_counted_after_insurance_declined(self):
+        """After declining insurance and playing, hole card counted exactly once."""
+        # Dealer: A + 5 = soft 16, must hit → draws 10 = hard 16, draws 2 = 18
+        preset = [
+            Card(Rank.FIVE, Suit.HEARTS),   # Player 1 (+1)
+            Card(Rank.ACE, Suit.CLUBS),     # Dealer upcard (ace, -1)
+            Card(Rank.THREE, Suit.SPADES),  # Player 2 (+1)
+            Card(Rank.FIVE, Suit.DIAMONDS), # Dealer hole (+1, no BJ)
+            Card(Rank.TEN, Suit.HEARTS),    # Dealer draw (0), A+5+10=16 hard
+            Card(Rank.TWO, Suit.CLUBS),     # Dealer draw (+1), 16+2=18
+        ]
+        preset.reverse()
+        shoe = Shoe(preset_cards=preset)
+        engine = BlackjackEngine(shoe=shoe)
+
+        engine.start_round(100)
+        engine.deal_initial()
+
+        # Visible: 5(+1) + 3(+1) + A(-1) = RC +1
+        assert engine.state.running_count == 1
+        assert engine.state.phase == GamePhase.INSURANCE_OFFER
+
+        engine.take_insurance(False)
+        # Hole 5(+1) now counted: +1 +1 = +2
+        assert engine.state.running_count == 2
+
+        engine.act(Action.STAND)
+        # Dealer draws 10(-1) + 2(+1): +2 + (-1) + 1 = +2
+        # Hole card must NOT be counted again (would be +3 if double-counted)
+        assert engine.state.running_count == 2
+
+    def test_hole_card_not_double_counted_insurance_taken_no_dealer_bj(self):
+        """Insurance taken, no dealer BJ, hole card counted once on stand."""
+        # Dealer: A + 6 = soft 17, draws 10 = hard 17, stands
+        preset = [
+            Card(Rank.FIVE, Suit.HEARTS),   # Player 1 (+1)
+            Card(Rank.ACE, Suit.CLUBS),     # Dealer upcard (ace, -1)
+            Card(Rank.THREE, Suit.SPADES),  # Player 2 (+1)
+            Card(Rank.SIX, Suit.DIAMONDS),  # Dealer hole (+1, counted at insurance)
+            Card(Rank.TEN, Suit.HEARTS),    # Dealer draw (-1), A+6+10=17 (not drawn, S17 stands)
+        ]
+        preset.reverse()
+        shoe = Shoe(preset_cards=preset)
+        engine = BlackjackEngine(shoe=shoe)
+
+        engine.start_round(100)
+        engine.deal_initial()
+
+        # Visible: 5(+1) + 3(+1) + A(-1) = +1
+        assert engine.state.running_count == 1
+
+        engine.take_insurance(True)
+        # Hole 6(+1) counted: +1 +1 = +2
+        assert engine.state.running_count == 2
+
+        engine.act(Action.STAND)
+        # Dealer stands on soft 17 (S17), no draws. RC stays +2
+        # Hole card NOT counted again (would be +3 if double-counted)
+        assert engine.state.running_count == 2
+
+
+class TestNextRoundPhaseGuard:
+    """Tests for next_round() phase guard."""
+
+    def test_next_round_blocked_during_player_turn(self):
+        """next_round should do nothing during PLAYER_TURN."""
+        preset = [
+            Card(Rank.FIVE, Suit.HEARTS),
+            Card(Rank.SIX, Suit.CLUBS),
+            Card(Rank.SIX, Suit.SPADES),
+            Card(Rank.KING, Suit.DIAMONDS),
+        ]
+        preset.reverse()
+        shoe = Shoe(preset_cards=preset)
+        engine = BlackjackEngine(shoe=shoe)
+
+        engine.start_round(100)
+        engine.deal_initial()
+        assert engine.state.phase == GamePhase.PLAYER_TURN
+
+        engine.next_round()
+        # Should still be in PLAYER_TURN, not reset
+        assert engine.state.phase == GamePhase.PLAYER_TURN
+        assert len(engine.state.player_hands) == 1
+
+    def test_next_round_works_after_round_over(self):
+        """next_round should work when phase is ROUND_OVER."""
+        preset = [
+            Card(Rank.ACE, Suit.HEARTS),
+            Card(Rank.SEVEN, Suit.CLUBS),
+            Card(Rank.KING, Suit.SPADES),
+            Card(Rank.EIGHT, Suit.DIAMONDS),
+        ]
+        preset.reverse()
+        shoe = Shoe(preset_cards=preset)
+        engine = BlackjackEngine(shoe=shoe)
+
+        engine.start_round(100)
+        engine.deal_initial()
+        assert engine.state.phase == GamePhase.ROUND_OVER  # Player BJ
+
+        engine.next_round()
+        assert engine.state.phase == GamePhase.BETTING
+        assert len(engine.state.player_hands) == 0
+
+
+class TestGameConfigValidation:
+    """Tests for GameConfig __post_init__ validation."""
+
+    def test_invalid_num_decks(self):
+        with pytest.raises(ValueError, match="num_decks"):
+            GameConfig(num_decks=0)
+
+    def test_num_decks_too_high(self):
+        with pytest.raises(ValueError, match="num_decks"):
+            GameConfig(num_decks=10)
+
+    def test_negative_bankroll(self):
+        with pytest.raises(ValueError, match="starting_bankroll"):
+            GameConfig(starting_bankroll=-100)
+
+    def test_min_bet_exceeds_max_bet(self):
+        with pytest.raises(ValueError, match="max_bet"):
+            GameConfig(min_bet=500, max_bet=100)
+
+    def test_invalid_penetration(self):
+        with pytest.raises(ValueError, match="penetration"):
+            GameConfig(penetration=2.0)
+
+    def test_valid_config_accepted(self):
+        config = GameConfig(num_decks=2, min_bet=5, max_bet=1000, penetration=0.8)
+        assert config.num_decks == 2
+
+
+class TestStatsOutcomeEnum:
+    """Tests that stats work with Outcome enum instead of strings."""
+
+    def test_stats_with_outcome_enum(self):
+        """Stats should correctly track outcomes using Outcome enum values."""
+        from blackjack.stats import BlackjackStats
+
+        stats = BlackjackStats()
+        stats.update_for_outcome(Outcome.WIN, 100, 100)
+        assert stats.hands_won == 1
+
+        stats.update_for_outcome(Outcome.BLACKJACK, 100, 150)
+        assert stats.blackjacks == 1
+        assert stats.hands_won == 2
+
+        stats.update_for_outcome(Outcome.BUST, 100, -100, is_doubled=True)
+        assert stats.busts == 1
+        assert stats.doubles_lost == 1
+
+        stats.update_for_outcome(Outcome.PUSH, 100, 0)
+        assert stats.hands_pushed == 1
+
+        stats.update_for_outcome(Outcome.LOSE, 50, -50, is_split=True)
+        assert stats.hands_lost == 2
+        assert stats.splits_played == 1
