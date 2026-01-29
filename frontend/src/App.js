@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "@/App.css";
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { GameTable } from '@/components/GameTable';
 import { CountingTrainer } from '@/components/CountingTrainer';
 import { StatsPanel } from '@/components/StatsPanel';
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { AuthDialog } from '@/components/AuthDialog';
 import { useBlackjackGame } from '@/lib/useGameState';
-import { Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, BookOpen, BarChart3 } from 'lucide-react';
+import { AuthProvider, useAuth } from '@/lib/authContext';
+import { setupAutoSync } from '@/lib/syncService';
+import { 
+  Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, 
+  BookOpen, BarChart3, User, Cloud 
+} from 'lucide-react';
 
-function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState('blackjack');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
   const { 
     gameState, 
@@ -25,6 +35,14 @@ function App() {
     getHint,
     decksRemaining 
   } = useBlackjackGame();
+
+  // Setup auto-sync when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const cleanup = setupAutoSync(60000); // Sync every minute
+      return cleanup;
+    }
+  }, [isAuthenticated]);
 
   const tabs = [
     { id: 'blackjack', label: 'Blackjack', icon: Spade },
@@ -69,6 +87,7 @@ function App() {
                       ? 'bg-primary text-primary-foreground' 
                       : 'text-muted-foreground hover:text-foreground'
                   )}
+                  data-testid={`tab-${tab.id}`}
                 >
                   <tab.icon className="w-4 h-4" />
                   <span className="hidden sm:inline">{tab.label}</span>
@@ -76,7 +95,7 @@ function App() {
               ))}
             </nav>
 
-            {/* Settings & Stats */}
+            {/* Settings, Auth & Stats */}
             <div className="flex items-center gap-3">
               {activeTab === 'blackjack' && (
                 <div className="hidden md:flex items-center gap-4">
@@ -103,11 +122,40 @@ function App() {
                   )}
                 </div>
               )}
+              
+              {/* Auth Button */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setAuthOpen(true)}
+                className={cn(
+                  "text-muted-foreground hover:text-foreground relative",
+                  isAuthenticated && "text-success"
+                )}
+                data-testid="auth-button"
+              >
+                {isAuthenticated && user ? (
+                  <Avatar className="w-7 h-7">
+                    <AvatarImage src={user.picture} alt={user.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <User className="w-5 h-5" />
+                )}
+                {isAuthenticated && (
+                  <Cloud className="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-success" />
+                )}
+              </Button>
+              
+              {/* Settings Button */}
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setSettingsOpen(true)}
                 className="text-muted-foreground hover:text-foreground"
+                data-testid="settings-button"
               >
                 <Settings className="w-5 h-5" />
               </Button>
@@ -156,9 +204,23 @@ function App() {
         onApply={actions.updateConfig}
       />
 
+      {/* Auth Dialog */}
+      <AuthDialog
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+      />
+
       {/* Toast notifications */}
       <Toaster position="top-right" />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
