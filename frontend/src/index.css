@@ -2,74 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Google Fonts - Space Grotesk for modern casino feel */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
 body {
     margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
+        /* Casino Dark Theme - Rich blacks with gold accents */
+        --background: 220 20% 6%;
+        --foreground: 45 30% 95%;
+        
+        --card: 220 18% 10%;
+        --card-foreground: 45 30% 95%;
+        
+        --popover: 220 18% 10%;
+        --popover-foreground: 45 30% 95%;
+        
+        /* Gold primary for luxury feel */
+        --primary: 45 85% 55%;
+        --primary-foreground: 220 20% 6%;
+        --primary-glow: 45 90% 65%;
+        
+        /* Deep emerald green for table feel */
+        --secondary: 160 50% 20%;
+        --secondary-foreground: 45 30% 95%;
+        
+        /* Muted tones */
+        --muted: 220 15% 15%;
+        --muted-foreground: 220 10% 55%;
+        
+        /* Accent - soft gold */
+        --accent: 45 60% 45%;
+        --accent-foreground: 220 20% 6%;
+        
+        /* Status colors */
+        --destructive: 0 70% 50%;
+        --destructive-foreground: 45 30% 95%;
+        --success: 145 60% 45%;
+        --success-foreground: 220 20% 6%;
+        --warning: 35 90% 55%;
+        --warning-foreground: 220 20% 6%;
+        
+        --border: 220 15% 18%;
+        --input: 220 15% 15%;
+        --ring: 45 85% 55%;
+        
+        /* Card colors */
+        --card-red: 0 75% 55%;
+        --card-black: 220 15% 20%;
+        
+        /* Chart colors */
+        --chart-1: 45 85% 55%;
+        --chart-2: 160 50% 40%;
+        --chart-3: 200 60% 50%;
+        --chart-4: 280 60% 55%;
+        --chart-5: 0 70% 55%;
+        
+        --radius: 0.75rem;
+        
+        /* Custom gradients */
+        --gradient-casino: linear-gradient(135deg, hsl(220 20% 8%) 0%, hsl(220 25% 4%) 100%);
+        --gradient-gold: linear-gradient(135deg, hsl(45 85% 55%) 0%, hsl(35 80% 45%) 100%);
+        --gradient-table: linear-gradient(180deg, hsl(160 45% 15%) 0%, hsl(160 50% 10%) 100%);
+        --gradient-card-shine: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+        
+        /* Shadows */
+        --shadow-gold: 0 4px 20px hsl(45 85% 55% / 0.25);
+        --shadow-card: 0 8px 32px rgba(0,0,0,0.4);
+        --shadow-glow: 0 0 30px hsl(45 85% 55% / 0.3);
+        
+        /* Animations */
+        --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    
     .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        --background: 220 20% 4%;
+        --foreground: 45 30% 95%;
     }
 }
 
@@ -79,37 +98,230 @@ code {
     }
     body {
         @apply bg-background text-foreground;
+        background: var(--gradient-casino);
+        min-height: 100vh;
     }
 }
 
+/* Custom utility classes */
+@layer utilities {
+    .font-display {
+        font-family: 'Playfair Display', serif;
+    }
+    
+    .text-gradient-gold {
+        background: var(--gradient-gold);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .bg-gradient-casino {
+        background: var(--gradient-casino);
+    }
+    
+    .bg-gradient-table {
+        background: var(--gradient-table);
+    }
+    
+    .bg-gradient-gold {
+        background: var(--gradient-gold);
+    }
+    
+    .shadow-gold {
+        box-shadow: var(--shadow-gold);
+    }
+    
+    .shadow-glow {
+        box-shadow: var(--shadow-glow);
+    }
+    
+    .shadow-card-elevated {
+        box-shadow: var(--shadow-card);
+    }
+    
+    /* Card animations */
+    .card-flip {
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .card-flip.flipped {
+        transform: rotateY(180deg);
+    }
+    
+    .card-deal {
+        animation: dealCard 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    @keyframes dealCard {
+        0% {
+            opacity: 0;
+            transform: translateY(-100px) rotate(-10deg) scale(0.8);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) rotate(0) scale(1);
+        }
+    }
+    
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+    
+    .shimmer {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255,255,255,0.1) 50%,
+            transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% {
+            box-shadow: 0 0 20px hsl(45 85% 55% / 0.3);
+        }
+        50% {
+            box-shadow: 0 0 40px hsl(45 85% 55% / 0.5);
+        }
+    }
+    
+    .animate-pulse-glow {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    .animate-float {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Felt texture overlay */
+    .felt-texture {
+        position: relative;
+    }
+    
+    .felt-texture::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        opacity: 0.03;
+        pointer-events: none;
+    }
+}
+
+/* Responsive typography */
+@layer base {
+    h1 {
+        @apply text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight;
+        font-family: 'Playfair Display', serif;
+    }
+    
+    h2 {
+        @apply text-2xl sm:text-3xl lg:text-4xl font-semibold leading-snug;
+        font-family: 'Playfair Display', serif;
+    }
+    
+    h3 {
+        @apply text-xl sm:text-2xl font-semibold;
+    }
+}
+
+/* Playing card styles */
+.playing-card {
+    @apply relative rounded-lg shadow-card-elevated overflow-hidden;
+    aspect-ratio: 2.5/3.5;
+    background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+    transition: transform var(--transition-bounce), box-shadow var(--transition-smooth);
+}
+
+.playing-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+.playing-card.red {
+    color: hsl(var(--card-red));
+}
+
+.playing-card.black {
+    color: hsl(var(--card-black));
+}
+
+.playing-card.face-down {
+    background: linear-gradient(145deg, hsl(220 50% 25%) 0%, hsl(220 60% 15%) 100%);
+    border: 2px solid hsl(45 85% 55% / 0.3);
+}
+
+.playing-card.face-down::after {
+    content: '♠♥♣♦';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: hsl(45 85% 55% / 0.4);
+    letter-spacing: 2px;
+}
+
+/* Chip styles */
+.chip {
+    @apply rounded-full flex items-center justify-center font-bold text-sm;
+    background: repeating-conic-gradient(
+        from 0deg,
+        hsl(var(--primary)) 0deg 30deg,
+        hsl(220 20% 15%) 30deg 60deg
+    );
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 -2px 4px rgba(0,0,0,0.3),
+                0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+}
+
+/* Focus styles */
+:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+}
+
+/* Debug wrapper */
 @layer base {
     [data-debug-wrapper="true"] {
         display: contents !important;
-    }
-
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
     }
 }
