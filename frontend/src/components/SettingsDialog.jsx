@@ -14,9 +14,14 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { defaultConfig } from '@/lib/gameLogic';
 import { clearAllData } from '@/lib/storage';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useAuth } from '@/lib/authContext';
+import { fullSync, getSyncStatus } from '@/lib/syncService';
+import { toast } from 'sonner';
+import { AlertTriangle, Trash2, User, Cloud, RefreshCw, LogIn, LogOut, Loader2, CheckCircle } from 'lucide-react';
 
 export function SettingsDialog({ open, onOpenChange, config, onApply }) {
   const [settings, setSettings] = useState(config);
