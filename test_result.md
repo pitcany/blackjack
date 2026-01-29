@@ -189,20 +189,32 @@ frontend:
         agent: "testing"
         comment: "✅ NEW FEATURES VERIFIED - All requested toggles found: 'Allow Surrender' toggle (enabled), 'Always Show Hints' toggle (disabled), 'Reset All Data' button present. Settings dialog fully functional with proper sections: Game Rules, Dealer Rules, Player Options, Strategy Hints, Data Management."
 
-  - task: "Navigation Between Tabs"
+  - task: "Stats Dashboard"
     implemented: true
     working: true
-    file: "/app/frontend/src/App.js"
+    file: "/app/frontend/src/components/StatsPanel.jsx"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
-        comment: "Initial testing required - need to verify navigation between Blackjack and Card Counting tabs works correctly"
+        comment: "Initial testing required - need to verify stats dashboard loads and displays key metrics"
       - working: true
         agent: "testing"
-        comment: "✅ PASSED - Navigation between Blackjack and Card Counting tabs works perfectly. Blackjack tab is active by default. Tab switching is smooth and maintains proper active state styling."
+        comment: "✅ NEW FEATURES VERIFIED - Statistics Dashboard fully functional! All 4 key stats cards found: Hands Played (0), Win Rate (0%), Blackjacks (0), Strategy Accuracy (0%). Both charts present: Bankroll History and Outcome Distribution. Common Mistakes section found with proper messaging. Strategy Performance section with detailed breakdown. Card Counting Training stats section included."
+
+  - task: "JavaScript Runtime Errors"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/lib/basicStrategy.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE - JavaScript runtime errors detected: 'Cannot read properties of undefined (reading '20_vs_10')' in strategy evaluation system. Error occurs in basicStrategy reducer and affects strategy feedback functionality. Multiple stack trace entries point to bundle.js lines related to strategy calculations."
 
 metadata:
   created_by: "testing_agent"
