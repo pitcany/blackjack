@@ -29,6 +29,12 @@ export function GameTable({
     lastAction, lastActionCorrect, optimalAction
   } = gameState;
 
+  const handleDeal = useCallback(() => {
+    if (actions.startRound(betAmount)) {
+      setShowHint(false);
+    }
+  }, [actions, betAmount]);
+
   // Calculate penetration percentage
   const totalCards = config.numDecks * 52;
   const cardsDealt = totalCards - (decksRemaining * 52);
@@ -103,13 +109,7 @@ export function GameTable({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [phase, getAvailableActions, actions]);
-
-  const handleDeal = () => {
-    if (actions.startRound(betAmount)) {
-      setShowHint(false);
-    }
-  };
+  }, [phase, getAvailableActions, actions, handleDeal]);
 
   const handleQuickBet = (amount) => {
     setBetAmount(amount);

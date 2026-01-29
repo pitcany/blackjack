@@ -204,12 +204,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       if (playerBJ && dealerBJ) {
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.PUSH;
+        const bankrollAfter = prev.bankroll + prev.currentBet;
+        addHandToHistory({ bankrollAfter });
         return {
           ...prev,
           playerHands: newPlayerHands,
           dealerCards,
           runningCount: newRunningCount,
-          bankroll: prev.bankroll + prev.currentBet,
+          bankroll: bankrollAfter,
           phase: GamePhase.ROUND_OVER,
           message: 'Both Blackjack! Push'
         };
@@ -219,12 +221,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         const payout = calculatePayout(Outcome.BLACKJACK, prev.currentBet, config);
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.BLACKJACK;
+        const bankrollAfter = prev.bankroll + prev.currentBet + payout;
+        addHandToHistory({ bankrollAfter });
         return {
           ...prev,
           playerHands: newPlayerHands,
           dealerCards,
           runningCount: newRunningCount,
-          bankroll: prev.bankroll + prev.currentBet + payout,
+          bankroll: bankrollAfter,
           phase: GamePhase.ROUND_OVER,
           message: 'Blackjack! You win!'
         };
@@ -233,11 +237,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       if (dealerBJ) {
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.LOSE;
+        const bankrollAfter = prev.bankroll;
+        addHandToHistory({ bankrollAfter });
         return {
           ...prev,
           playerHands: newPlayerHands,
           dealerCards,
           runningCount: newRunningCount,
+          bankroll: bankrollAfter,
           phase: GamePhase.ROUND_OVER,
           message: 'Dealer has Blackjack!'
         };
@@ -290,6 +297,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           newHands[0] = { ...newHands[0], resolved: true, result: Outcome.LOSE };
         }
 
+        addHandToHistory({ bankrollAfter: newBankroll });
         return {
           ...prev,
           playerHands: newHands,
@@ -311,10 +319,12 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         const payout = calculatePayout(Outcome.BLACKJACK, prev.currentBet, config);
         const newHands = [...prev.playerHands];
         newHands[0] = { ...newHands[0], resolved: true, result: Outcome.BLACKJACK };
+        const bankrollAfter = newBankroll + prev.currentBet + payout;
+        addHandToHistory({ bankrollAfter });
         return {
           ...prev,
           playerHands: newHands,
-          bankroll: newBankroll + prev.currentBet + payout,
+          bankroll: bankrollAfter,
           insuranceBet: 0,
           phase: GamePhase.ROUND_OVER,
           message: 'Blackjack! You win!'
@@ -667,6 +677,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           surrenders: (s.surrenders || 0) + 1
         }));
 
+        addHandToHistory({ bankrollAfter: newBankroll });
         return {
           ...prev,
           playerHands: newHands,
@@ -741,6 +752,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     const pushes = outcomes.filter(o => o === Outcome.PUSH).length;
 
     setStats(prev => ({
+      ...prev,
       handsPlayed: prev.handsPlayed + resolvedHands.length,
       handsWon: prev.handsWon + wins,
       handsLost: prev.handsLost + losses,
@@ -748,6 +760,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       pushes: prev.pushes + pushes
     }));
 
+    addHandToHistory({ bankrollAfter: newBankroll });
     const dealerTotal = calculateHandTotal(dealerCards).total;
     const dealerBust = isBust(dealerCards);
     const resultSummary = resolvedHands.length > 1

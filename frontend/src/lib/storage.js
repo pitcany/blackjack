@@ -116,7 +116,7 @@ export function loadStrategyStats() {
     pairCorrect: 0,
     deviationsOffered: 0,
     deviationsTaken: 0,
-    commonMistakes: {} // { "16_vs_10": { wrong: 5, correct: "STAND" } }
+    mistakes: {} // { "16_vs_10": { wrong: 5, correct: "STAND" } }
   });
 }
 
