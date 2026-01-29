@@ -321,15 +321,15 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Hit action
   const hit = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
-    
-    const shoe = shoeRef.current;
-    const card = shoe.draw();
 
     setGameState(prev => {
+      const shoe = shoeRef.current;
+      const card = shoe.draw();
+
       const newHands = [...prev.playerHands];
       const handIndex = prev.activeHandIndex;
       const hand = { ...newHands[handIndex] };
-      
+
       hand.cards = [...hand.cards, card];
       newHands[handIndex] = hand;
 
@@ -393,15 +393,15 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Double action
   const double = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
-    
-    const shoe = shoeRef.current;
-    const card = shoe.draw();
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
       if (hand.bet > prev.bankroll) {
         return { ...prev, message: 'Insufficient bankroll to double' };
       }
+
+      const shoe = shoeRef.current;
+      const card = shoe.draw();
 
       const newHands = [...prev.playerHands];
       const newHand = {
@@ -443,8 +443,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Split action
   const split = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
-    
-    const shoe = shoeRef.current;
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
@@ -452,6 +450,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         return { ...prev, message: 'Insufficient bankroll to split' };
       }
 
+      const shoe = shoeRef.current;
       const card1 = shoe.draw();
       const card2 = shoe.draw();
       const newRunningCount = updateRunningCount(prev.runningCount, [card1, card2]);
@@ -554,7 +553,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     const resolvedHands = hands.map(hand => {
       if (hand.resolved) return hand;
       
-      const outcome = compareHands(hand.cards, dealerCards);
+      const outcome = compareHands(hand.cards, dealerCards, hand.isSplitChild);
       const payout = calculatePayout(outcome, hand.bet, config);
       
       if (outcome === Outcome.WIN || outcome === Outcome.BLACKJACK || outcome === Outcome.PUSH) {
@@ -605,7 +604,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     setGameState(prev => ({
       ...prev,
       bankroll: newConfig.startingBankroll,
+      currentBet: 0,
+      playerHands: [],
+      dealerCards: [],
       runningCount: 0,
+      activeHandIndex: 0,
+      insuranceBet: 0,
+      splitCount: 0,
       phase: GamePhase.BETTING,
       message: 'Settings updated. Place your bet.'
     }));
