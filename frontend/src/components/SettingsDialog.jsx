@@ -44,6 +44,33 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
     window.location.reload();
   };
 
+  const handleSync = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in first');
+      return;
+    }
+    setSyncing(true);
+    try {
+      const result = await fullSync();
+      if (result.success) {
+        toast.success('Data synced successfully!');
+      } else {
+        toast.error(`Sync failed: ${result.reason}`);
+      }
+    } catch (error) {
+      toast.error('Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Signed out');
+  };
+
+  const syncStatus = getSyncStatus();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border max-w-md max-h-[85vh] overflow-y-auto">
