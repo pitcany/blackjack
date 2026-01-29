@@ -1,5 +1,19 @@
 """Theme constants for the Tkinter UI."""
 
+import platform
+import tkinter as tk
+
+if platform.system() == "Darwin":
+    try:
+        from tkmacosx import Button as _Button
+    except ImportError:
+        _Button = tk.Button
+else:
+    _Button = tk.Button
+
+# Platform-aware Button that supports bg/fg on macOS
+Button = _Button
+
 
 class Theme:
     """UI theme constants."""

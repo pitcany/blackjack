@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable
 
-from .theme import Theme
+from .theme import Theme, Button
 from blackjack import GameConfig
 
 
@@ -140,7 +140,7 @@ class SettingsDialog:
         btn_frame = tk.Frame(self.dialog, bg=Theme.BG_DARK)
         btn_frame.pack(fill=tk.X, padx=Theme.PAD_LARGE, pady=Theme.PAD_MEDIUM)
         
-        tk.Button(
+        Button(
             btn_frame,
             text="Apply",
             command=self._apply,
@@ -152,7 +152,7 @@ class SettingsDialog:
             cursor="hand2"
         ).pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        tk.Button(
+        Button(
             btn_frame,
             text="Cancel",
             command=self._cancel,
@@ -164,7 +164,7 @@ class SettingsDialog:
             cursor="hand2"
         ).pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        tk.Button(
+        Button(
             btn_frame,
             text="Reset Defaults",
             command=self._reset_defaults,
