@@ -192,7 +192,10 @@ export const defaultConfig = {
   splitAcesOneCardOnly: true,
   maxSplits: 3,
   insurancePays: 2.0,
-  penetration: 0.75
+  penetration: 0.75,
+  allowSurrender: true,
+  showHints: false,
+  alwaysShowHints: false
 };
 
 // Dealer should hit logic
