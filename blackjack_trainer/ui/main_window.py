@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Optional
 
-from .theme import Theme, Button
+from .theme import Theme
 from .blackjack_screen import BlackjackScreen
 from .training_screen import TrainingScreen
 from .settings_dialog import SettingsDialog
@@ -61,7 +61,7 @@ class MainWindow:
         btn_frame = tk.Frame(self.nav_frame, bg=Theme.BG_MEDIUM)
         btn_frame.pack(side=tk.RIGHT, padx=Theme.PAD_LARGE)
         
-        self.btn_blackjack = Button(
+        self.btn_blackjack = tk.Button(
             btn_frame,
             text="Blackjack",
             command=self._show_blackjack,
@@ -75,7 +75,7 @@ class MainWindow:
         )
         self.btn_blackjack.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_training = Button(
+        self.btn_training = tk.Button(
             btn_frame,
             text="Card Counting",
             command=self._show_training,
@@ -89,7 +89,7 @@ class MainWindow:
         )
         self.btn_training.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_settings = Button(
+        self.btn_settings = tk.Button(
             btn_frame,
             text="Settings",
             command=self._show_settings,

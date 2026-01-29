@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List
 
-from .theme import Theme, Button
+from .theme import Theme
 from blackjack import (
     BlackjackEngine, GamePhase, Action, Card, PlayerHandState,
     format_hand, best_total_and_soft, is_bust
@@ -103,7 +103,7 @@ class BlackjackScreen(tk.Frame):
             "cursor": "hand2"
         }
         
-        self.btn_hit = Button(
+        self.btn_hit = tk.Button(
             self.action_frame,
             text="HIT",
             command=lambda: self._do_action(Action.HIT),
@@ -114,7 +114,7 @@ class BlackjackScreen(tk.Frame):
         )
         self.btn_hit.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_stand = Button(
+        self.btn_stand = tk.Button(
             self.action_frame,
             text="STAND",
             command=lambda: self._do_action(Action.STAND),
@@ -125,7 +125,7 @@ class BlackjackScreen(tk.Frame):
         )
         self.btn_stand.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_double = Button(
+        self.btn_double = tk.Button(
             self.action_frame,
             text="DOUBLE",
             command=lambda: self._do_action(Action.DOUBLE),
@@ -136,7 +136,7 @@ class BlackjackScreen(tk.Frame):
         )
         self.btn_double.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_split = Button(
+        self.btn_split = tk.Button(
             self.action_frame,
             text="SPLIT",
             command=lambda: self._do_action(Action.SPLIT),
@@ -150,7 +150,7 @@ class BlackjackScreen(tk.Frame):
         # Insurance buttons (initially hidden)
         self.insurance_frame = tk.Frame(self.action_frame, bg=Theme.BG_DARK)
         
-        self.btn_insurance_yes = Button(
+        self.btn_insurance_yes = tk.Button(
             self.insurance_frame,
             text="TAKE INSURANCE",
             command=lambda: self._take_insurance(True),
@@ -160,7 +160,7 @@ class BlackjackScreen(tk.Frame):
         )
         self.btn_insurance_yes.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_insurance_no = Button(
+        self.btn_insurance_no = tk.Button(
             self.insurance_frame,
             text="NO INSURANCE",
             command=lambda: self._take_insurance(False),
@@ -191,7 +191,7 @@ class BlackjackScreen(tk.Frame):
         self.bet_entry.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         self.bet_entry.insert(0, str(self.engine.config.min_bet))
         
-        self.btn_deal = Button(
+        self.btn_deal = tk.Button(
             self.betting_frame,
             text="DEAL",
             command=self._deal,
@@ -204,7 +204,7 @@ class BlackjackScreen(tk.Frame):
         )
         self.btn_deal.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_new_round = Button(
+        self.btn_new_round = tk.Button(
             self.betting_frame,
             text="NEW ROUND",
             command=self._new_round,
@@ -230,7 +230,7 @@ class BlackjackScreen(tk.Frame):
         ).pack(side=tk.LEFT)
         
         for amount in [10, 25, 50, 100]:
-            btn = Button(
+            btn = tk.Button(
                 quick_bet_frame,
                 text=f"${amount}",
                 command=lambda a=amount: self._set_bet(a),

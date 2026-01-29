@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Optional
 
-from .theme import Theme, Button
+from .theme import Theme
 from blackjack import CountingTrainer, CountingTrainerConfig, Card
 
 
@@ -174,7 +174,7 @@ class TrainingScreen(tk.Frame):
         btn_frame = tk.Frame(parent, bg=Theme.BG_MEDIUM)
         btn_frame.pack(fill=tk.X, pady=Theme.PAD_LARGE)
         
-        self.btn_start = Button(
+        self.btn_start = tk.Button(
             btn_frame,
             text="Start Training",
             command=self._toggle_training,
@@ -272,7 +272,7 @@ class TrainingScreen(tk.Frame):
         btn_frame = tk.Frame(input_frame, bg=Theme.BG_DARK)
         btn_frame.pack(pady=Theme.PAD_MEDIUM)
         
-        self.btn_submit = Button(
+        self.btn_submit = tk.Button(
             btn_frame,
             text="Submit",
             command=self._submit_guess,
@@ -286,7 +286,7 @@ class TrainingScreen(tk.Frame):
         )
         self.btn_submit.pack(side=tk.LEFT, padx=Theme.PAD_SMALL)
         
-        self.btn_next = Button(
+        self.btn_next = tk.Button(
             btn_frame,
             text="Next Round",
             command=self._next_round,
