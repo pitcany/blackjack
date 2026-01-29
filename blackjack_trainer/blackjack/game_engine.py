@@ -130,10 +130,10 @@ class BlackjackEngine:
         # Deal 2 cards to player, 2 to dealer
         player_hand = self.state.player_hands[0]
         
-        player_hand.cards.append(self.shoe.draw())
-        self.state.dealer_cards.append(self.shoe.draw())
-        player_hand.cards.append(self.shoe.draw())
-        self.state.dealer_cards.append(self.shoe.draw())
+        player_hand.cards.append(self._draw())
+        self.state.dealer_cards.append(self._draw())
+        player_hand.cards.append(self._draw())
+        self.state.dealer_cards.append(self._draw())
         
         # Update running count for visible cards only
         # (player cards + dealer upcard; hole card counted at dealer turn)
@@ -313,7 +313,7 @@ class BlackjackEngine:
     
     def _do_hit(self, hand: PlayerHandState) -> None:
         """Hit - draw one card."""
-        card = self.shoe.draw()
+        card = self._draw()
         hand.cards.append(card)
         self.state.running_count = update_running_count(
             self.state.running_count, [card]
@@ -346,7 +346,7 @@ class BlackjackEngine:
         hand.is_doubled = True
         
         # Draw exactly one card
-        card = self.shoe.draw()
+        card = self._draw()
         hand.cards.append(card)
         self.state.running_count = update_running_count(
             self.state.running_count, [card]
@@ -381,8 +381,8 @@ class BlackjackEngine:
         hand.is_split_child = True
         
         # Deal one card to each hand
-        card1 = self.shoe.draw()
-        card2 = self.shoe.draw()
+        card1 = self._draw()
+        card2 = self._draw()
         hand.cards.append(card1)
         new_hand.cards.append(card2)
         
@@ -419,6 +419,14 @@ class BlackjackEngine:
                 self.state.running_count, [hole_card]
             )
             self._hole_card_counted = True
+
+    def _draw(self) -> Card:
+        """Draw a card, resetting running count if the shoe auto-reshuffled."""
+        card = self.shoe.draw()
+        if self.shoe.reshuffled:
+            self.state.running_count = 0
+            self.shoe.reshuffled = False
+        return card
 
     def _advance_to_next_hand(self) -> None:
         """Move to the next unresolved hand or dealer turn."""
@@ -457,7 +465,7 @@ class BlackjackEngine:
 
         # Dealer draws until standing
         while dealer_should_hit(self.state.dealer_cards, self.config):
-            card = self.shoe.draw()
+            card = self._draw()
             self.state.dealer_cards.append(card)
             self.state.running_count = update_running_count(
                 self.state.running_count, [card]

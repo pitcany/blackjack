@@ -276,6 +276,19 @@ class TestShoeAutoReshuffle:
         assert card is not None
         assert shoe.cards_remaining() == 51
 
+    def test_auto_reshuffle_resets_running_count(self):
+        """Mid-round auto-reshuffle should reset running count to zero."""
+        shoe = Shoe(num_decks=1, penetration=1.0)
+        engine = BlackjackEngine(shoe=shoe)
+        engine.state.running_count = 5  # simulate accumulated count
+        # Drain the shoe
+        while shoe.cards_remaining() > 0:
+            shoe.draw()
+        # Next draw via engine should trigger reshuffle and reset count
+        card = engine._draw()
+        assert card is not None
+        assert engine.state.running_count == 0
+
     def test_draw_preset_raises_when_empty(self):
         """Drawing from empty preset shoe should raise ValueError."""
         shoe = Shoe(preset_cards=[Card(Rank.ACE, Suit.HEARTS)])

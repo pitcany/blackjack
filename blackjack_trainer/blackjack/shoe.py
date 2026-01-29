@@ -31,6 +31,7 @@ class Shoe:
         self._preset_cards = preset_cards
         self._cards: List[Card] = []
         self._total_cards = num_decks * 52
+        self.reshuffled = False
         
         if preset_cards is not None:
             self._cards = preset_cards.copy()
@@ -77,6 +78,7 @@ class Shoe:
             if self._preset_cards is not None:
                 raise ValueError("Shoe is empty! (preset cards exhausted)")
             self._build_and_shuffle()
+            self.reshuffled = True
         return self._cards.pop()
     
     def cards_remaining(self) -> int:
