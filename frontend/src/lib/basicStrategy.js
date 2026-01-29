@@ -218,6 +218,11 @@ function resolveAction(code, canDouble, canSurrender, canSplit) {
  * @returns {Object} - { action, reason, isDeviation, deviationInfo }
  */
 export function getOptimalAction(playerCards, dealerUpcard, options = {}) {
+  // Guard against invalid inputs
+  if (!playerCards || playerCards.length === 0 || !dealerUpcard) {
+    return { action: 'STAND', reason: 'Invalid hand', isDeviation: false, deviationInfo: null };
+  }
+
   const {
     canDouble = true,
     canSplit = true,
