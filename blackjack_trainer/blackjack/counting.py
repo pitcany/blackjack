@@ -114,13 +114,8 @@ class CountingTrainer:
             self.shoe.rebuild_and_shuffle()
             self.running_count = 0
         
-        # Determine number of cards based on drill type
-        if self.config.drill_type == "single_card":
-            num_cards = self.config.cards_per_round
-        elif self.config.drill_type == "hand":
-            num_cards = 2
-        else:  # round
-            num_cards = 4  # 2 player + 2 dealer
+        # Determine number of cards based on configuration
+        num_cards = self.config.cards_per_round
         
         # Draw cards
         cards = []
