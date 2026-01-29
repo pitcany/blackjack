@@ -152,7 +152,7 @@ frontend:
 
   - task: "Card Counting Training Mode"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/CountingTrainer.jsx"
     stuck_count: 0
     priority: "high"
@@ -164,6 +164,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ FAILED - Training mode starts but no cards are displayed and no input fields are available. Shows 'Enter your count' text but no interface to actually enter counts. Training cards count shows 6 cards but they are not visible to user. Input fields for RC/TC are missing."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED - Card Counting Training Mode is now fully functional! Cards are properly displayed (found 10 card elements), Running Count input field is available, Submit button works, feedback system provides correct/incorrect responses, and Next Round button advances to new cards. All core training functionality working correctly."
 
   - task: "Settings Dialog Functionality"
     implemented: true
