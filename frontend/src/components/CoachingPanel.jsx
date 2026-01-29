@@ -293,7 +293,7 @@ export function CoachingPanel() {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Brain className="w-5 h-5 text-primary" />
-              Today's Recommendation
+              Today&apos;s Recommendation
             </CardTitle>
           </CardHeader>
           <CardContent>
