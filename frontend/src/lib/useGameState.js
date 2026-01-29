@@ -410,12 +410,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
       if (!evaluation.isCorrect) {
         const total = calculateHandTotal(hand.cards).total;
-        const dealerVal = gameState.dealerCards[0].rank?.symbol || gameState.dealerCards[0].symbol;
+        const dealerVal = gameState.dealerCards[0]?.rank?.symbol || gameState.dealerCards[0]?.symbol || '?';
         const mistakeKey = `${total}_vs_${dealerVal}`;
+        const prevMistakes = prev.mistakes || {};
         newStats.mistakes = {
-          ...prev.mistakes,
+          ...prevMistakes,
           [mistakeKey]: {
-            count: (prev.mistakes[mistakeKey]?.count || 0) + 1,
+            count: (prevMistakes[mistakeKey]?.count || 0) + 1,
             correct: evaluation.optimalAction,
             wrong: action
           }
