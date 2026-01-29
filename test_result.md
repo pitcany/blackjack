@@ -101,3 +101,100 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the Blackjack Trainer web application with blackjack game mode, card counting training mode, and settings functionality"
+
+frontend:
+  - task: "Blackjack Game Mode - Betting and Deal Cards"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/GameTable.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify betting chips ($10, $25, $50, $100, $250), deal cards functionality, and bankroll updates"
+
+  - task: "Blackjack Game Actions - Hit, Stand, Double, Split"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/GameTable.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify game actions work correctly and are available when appropriate"
+
+  - task: "Running Count Display and Updates"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/GameTable.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify running count (RC) updates correctly as cards are dealt"
+
+  - task: "Card Counting Training Mode"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/CountingTrainer.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify training settings, card display, count input, and feedback system"
+
+  - task: "Settings Dialog Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/SettingsDialog.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify settings dialog opens, changes can be made, and settings are applied"
+
+  - task: "Navigation Between Tabs"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Initial testing required - need to verify navigation between Blackjack and Card Counting tabs works correctly"
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Blackjack Game Mode - Betting and Deal Cards"
+    - "Blackjack Game Actions - Hit, Stand, Double, Split"
+    - "Running Count Display and Updates"
+    - "Card Counting Training Mode"
+    - "Settings Dialog Functionality"
+    - "Navigation Between Tabs"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: "Starting comprehensive testing of Blackjack Trainer application. Will test all major features including game modes, settings, and navigation."
