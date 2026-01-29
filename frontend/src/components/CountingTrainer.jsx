@@ -192,7 +192,7 @@ export function CountingTrainer() {
                 </div>
 
                 {/* Input Area */}
-                {state.showingCards && (
+                {state.currentCards.length > 0 && !state.feedback && (
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col items-center gap-1">
