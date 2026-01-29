@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultConfig } from '@/lib/gameLogic';
 
-export function SettingsDialog({ open, onOpenChange, config, onApply }) {
+export function SettingsDialog({ open, onOpenChange, config, onApply, hintMode, onHintModeChange, onResetAllData }) {
   const [settings, setSettings] = useState(config);
 
   // Sync local settings when dialog opens or config changes externally
@@ -36,7 +36,7 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-md">
+      <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-primary">Game Settings</DialogTitle>
           <DialogDescription>
@@ -48,8 +48,8 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
           {/* Number of Decks */}
           <div className="flex items-center justify-between">
             <Label className="text-foreground">Number of Decks</Label>
-            <Select 
-              value={settings.numDecks.toString()} 
+            <Select
+              value={settings.numDecks.toString()}
               onValueChange={(v) => setSettings(s => ({ ...s, numDecks: parseInt(v) }))}
             >
               <SelectTrigger className="w-24">
@@ -128,9 +128,47 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
               onCheckedChange={(v) => setSettings(s => ({ ...s, doubleAfterSplit: v }))}
             />
           </div>
+
+          {/* Late Surrender */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-foreground">Late Surrender</Label>
+              <p className="text-xs text-muted-foreground">Forfeit half bet on initial hand</p>
+            </div>
+            <Switch
+              checked={settings.lateSurrender ?? true}
+              onCheckedChange={(v) => setSettings(s => ({ ...s, lateSurrender: v }))}
+            />
+          </div>
+
+          {/* Hint Mode */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-foreground">Strategy Hints</Label>
+              <p className="text-xs text-muted-foreground">Show optimal play guidance</p>
+            </div>
+            <Select
+              value={hintMode || 'on-demand'}
+              onValueChange={(v) => onHintModeChange?.(v)}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="off">Off</SelectItem>
+                <SelectItem value="on-demand">On-Demand</SelectItem>
+                <SelectItem value="always">Always</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
+          {onResetAllData && (
+            <Button variant="destructive" onClick={onResetAllData} className="sm:mr-auto">
+              Reset All Data
+            </Button>
+          )}
           <Button variant="outline" onClick={handleReset}>
             Reset Defaults
           </Button>

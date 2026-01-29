@@ -38,7 +38,8 @@ export const Outcome = {
   LOSE: 'LOSE',
   PUSH: 'PUSH',
   BLACKJACK: 'BLACKJACK',
-  BUST: 'BUST'
+  BUST: 'BUST',
+  SURRENDER: 'SURRENDER'
 };
 
 // Card class
@@ -191,7 +192,8 @@ export const defaultConfig = {
   splitAcesOneCardOnly: true,
   maxSplits: 3,
   insurancePays: 2.0,
-  penetration: 0.75
+  penetration: 0.75,
+  lateSurrender: true
 };
 
 // Dealer should hit logic
@@ -233,6 +235,8 @@ export function calculatePayout(outcome, bet, config) {
     case Outcome.LOSE:
     case Outcome.BUST:
       return -bet;
+    case Outcome.SURRENDER:
+      return -Math.floor(bet / 2);
     case Outcome.PUSH:
     default:
       return 0;

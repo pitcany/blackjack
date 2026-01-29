@@ -6,26 +6,34 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { GameTable } from '@/components/GameTable';
 import { CountingTrainer } from '@/components/CountingTrainer';
+import { StatsPanel } from '@/components/StatsPanel';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { useBlackjackGame } from '@/lib/useGameState';
-import { Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, BookOpen } from 'lucide-react';
+import { Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, BookOpen, BarChart3 } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('blackjack');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  
-  const { 
-    gameState, 
-    stats, 
-    config, 
-    actions, 
-    getAvailableActions, 
-    decksRemaining 
+  const [hintMode, setHintMode] = useState('on-demand');
+
+  const {
+    gameState,
+    stats,
+    strategyStats,
+    handHistory,
+    config,
+    actions,
+    getAvailableActions,
+    getOptimalAction,
+    getDeviationInfo,
+    decksRemaining,
+    trueCount,
   } = useBlackjackGame();
 
   const tabs = [
     { id: 'blackjack', label: 'Blackjack', icon: Spade },
     { id: 'training', label: 'Card Counting', icon: BookOpen },
+    { id: 'stats', label: 'Stats', icon: BarChart3 },
   ];
 
   return (
@@ -56,8 +64,8 @@ function App() {
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
                     'gap-2',
-                    activeTab === tab.id 
-                      ? 'bg-primary text-primary-foreground' 
+                    activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -81,8 +89,8 @@ function App() {
                   </Badge>
                 </div>
               )}
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => setSettingsOpen(true)}
                 className="text-muted-foreground hover:text-foreground"
@@ -101,11 +109,22 @@ function App() {
             gameState={gameState}
             actions={actions}
             getAvailableActions={getAvailableActions}
+            getOptimalAction={getOptimalAction}
+            getDeviationInfo={getDeviationInfo}
             decksRemaining={decksRemaining}
+            trueCount={trueCount}
             config={config}
+            strategyStats={strategyStats}
+            hintMode={hintMode}
           />
-        ) : (
+        ) : activeTab === 'training' ? (
           <CountingTrainer />
+        ) : (
+          <StatsPanel
+            stats={stats}
+            strategyStats={strategyStats}
+            handHistory={handHistory}
+          />
         )}
       </main>
 
@@ -114,10 +133,11 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>
-              Built with React • Practice responsibly
+              Built with React
             </p>
             <div className="flex items-center gap-4">
-              <span>Hi-Lo: 2-6 (+1) • 7-9 (0) • 10-A (-1)</span>
+              <span>Hi-Lo: 2-6 (+1) | 7-9 (0) | 10-A (-1)</span>
+              <span>H/S/D/P/R = Actions | Enter = Deal/Next | 1-5 = Chips</span>
             </div>
           </div>
         </div>
@@ -129,6 +149,9 @@ function App() {
         onOpenChange={setSettingsOpen}
         config={config}
         onApply={actions.updateConfig}
+        hintMode={hintMode}
+        onHintModeChange={setHintMode}
+        onResetAllData={actions.resetAllData}
       />
 
       {/* Toast notifications */}

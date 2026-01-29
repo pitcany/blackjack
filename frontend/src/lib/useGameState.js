@@ -1,5 +1,5 @@
 // Game state management with React hooks
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Shoe,
   Card,
@@ -14,16 +14,54 @@ import {
   calculatePayout,
   updateRunningCount,
   hiLoValue,
+  trueCount,
   defaultConfig,
   Rank
 } from './gameLogic';
+import { getBasicStrategy, getDeviation, shouldTakeInsurance } from './basicStrategy';
+
+// localStorage keys
+const LS_CONFIG = 'bj_config';
+const LS_BANKROLL = 'bj_bankroll';
+const LS_STATS = 'bj_stats';
+const LS_STRATEGY_STATS = 'bj_strategy_stats';
+const LS_HAND_HISTORY = 'bj_hand_history';
+
+function loadFromLS(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToLS(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* ignore quota errors */ }
+}
+
+const defaultStats = {
+  handsPlayed: 0,
+  handsWon: 0,
+  handsLost: 0,
+  blackjacks: 0,
+  pushes: 0
+};
+
+const defaultStrategyStats = {
+  correctDecisions: 0,
+  totalDecisions: 0,
+};
 
 export function useBlackjackGame(initialConfig = defaultConfig) {
-  const [config, setConfig] = useState(initialConfig);
+  const savedConfig = loadFromLS(LS_CONFIG, initialConfig);
+  const [config, setConfig] = useState({ ...defaultConfig, ...savedConfig });
   const shoeRef = useRef(new Shoe(config.numDecks, config.penetration));
-  
+
   const [gameState, setGameState] = useState({
-    bankroll: config.startingBankroll,
+    bankroll: loadFromLS(LS_BANKROLL, config.startingBankroll),
     currentBet: 0,
     playerHands: [],
     dealerCards: [],
@@ -32,16 +70,84 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     runningCount: 0,
     activeHandIndex: 0,
     insuranceBet: 0,
-    splitCount: 0
+    splitCount: 0,
+    lastStrategyFeedback: null, // { action, optimal, correct }
   });
 
-  const [stats, setStats] = useState({
-    handsPlayed: 0,
-    handsWon: 0,
-    handsLost: 0,
-    blackjacks: 0,
-    pushes: 0
-  });
+  const [stats, setStats] = useState(loadFromLS(LS_STATS, defaultStats));
+  const [strategyStats, setStrategyStats] = useState(loadFromLS(LS_STRATEGY_STATS, defaultStrategyStats));
+  const [handHistory, setHandHistory] = useState(loadFromLS(LS_HAND_HISTORY, []));
+
+  // Persist to localStorage
+  useEffect(() => { saveToLS(LS_BANKROLL, gameState.bankroll); }, [gameState.bankroll]);
+  useEffect(() => { saveToLS(LS_STATS, stats); }, [stats]);
+  useEffect(() => { saveToLS(LS_STRATEGY_STATS, strategyStats); }, [strategyStats]);
+  useEffect(() => { saveToLS(LS_HAND_HISTORY, handHistory); }, [handHistory]);
+  useEffect(() => { saveToLS(LS_CONFIG, config); }, [config]);
+
+  // Get optimal action for current hand
+  const getOptimalAction = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return null;
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || hand.resolved) return null;
+
+    const { total, isSoft } = calculateHandTotal(hand.cards);
+    const isPair = hand.cards.length === 2 && (hand.cards[0].rank === hand.cards[1].rank || (hand.cards[0].value === 10 && hand.cards[1].value === 10));
+    const pairValue = isPair ? hand.cards[0].value : 0;
+    const dealerUpcard = gameState.dealerCards[0]?.value || 10;
+
+    const canDbl = hand.cards.length === 2 && hand.bet <= gameState.bankroll && (!hand.isSplitChild || config.doubleAfterSplit);
+    const canSpl = isPair && gameState.splitCount < config.maxSplits && hand.bet <= gameState.bankroll && hand.cards.length === 2;
+    const canSurrender = config.lateSurrender && hand.cards.length === 2 && !hand.isSplitChild;
+
+    return getBasicStrategy({
+      playerTotal: total,
+      isSoft,
+      isPair,
+      pairValue,
+      dealerUpcard,
+      canDouble: canDbl,
+      canSplit: canSpl,
+      canSurrender,
+      dealerHitsSoft17: config.dealerHitsSoft17,
+      doubleAfterSplit: config.doubleAfterSplit,
+      numCards: hand.cards.length,
+    });
+  }, [gameState, config]);
+
+  // Get deviation info for current hand
+  const getDeviationInfo = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return null;
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || hand.resolved) return null;
+
+    const { total, isSoft } = calculateHandTotal(hand.cards);
+    const isPair = hand.cards.length === 2 && (hand.cards[0].rank === hand.cards[1].rank || (hand.cards[0].value === 10 && hand.cards[1].value === 10));
+    const dealerUpcard = gameState.dealerCards[0]?.value || 10;
+    const tc = trueCount(gameState.runningCount, shoeRef.current.decksRemaining());
+
+    return getDeviation(total, isSoft, isPair, dealerUpcard, tc);
+  }, [gameState]);
+
+  // Track a player action against basic strategy
+  const trackDecision = useCallback((action) => {
+    const optimal = getOptimalAction();
+    if (!optimal) return null;
+    const correct = action === optimal;
+    setStrategyStats(prev => ({
+      correctDecisions: prev.correctDecisions + (correct ? 1 : 0),
+      totalDecisions: prev.totalDecisions + 1,
+    }));
+    return { action, optimal, correct };
+  }, [getOptimalAction]);
+
+  // Add hand to history (max 200)
+  const addToHistory = useCallback((entry) => {
+    setHandHistory(prev => {
+      const updated = [...prev, entry];
+      return updated.slice(-200);
+    });
+  }, []);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -56,16 +162,23 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       runningCount: 0,
       activeHandIndex: 0,
       insuranceBet: 0,
-      splitCount: 0
+      splitCount: 0,
+      lastStrategyFeedback: null,
     });
-    setStats({
-      handsPlayed: 0,
-      handsWon: 0,
-      handsLost: 0,
-      blackjacks: 0,
-      pushes: 0
-    });
+    setStats(defaultStats);
+    setStrategyStats(defaultStrategyStats);
+    setHandHistory([]);
   }, [config]);
+
+  // Reset all saved data
+  const resetAllData = useCallback(() => {
+    localStorage.removeItem(LS_CONFIG);
+    localStorage.removeItem(LS_BANKROLL);
+    localStorage.removeItem(LS_STATS);
+    localStorage.removeItem(LS_STRATEGY_STATS);
+    localStorage.removeItem(LS_HAND_HISTORY);
+    resetGame();
+  }, [resetGame]);
 
   // Start round
   const startRound = useCallback((bet) => {
@@ -105,6 +218,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         insuranceBet: 0,
         activeHandIndex: 0,
         splitCount: 0,
+        lastStrategyFeedback: null,
         message: 'Dealing...'
       };
     });
@@ -131,10 +245,10 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       newRunningCount = updateRunningCount(newRunningCount, [dealerCards[1]]);
     }
 
-    // Check if all player hands busted
-    const allBusted = hands.every(h => h.resolved && h.result === Outcome.BUST);
+    // Check if all player hands busted or surrendered
+    const allResolved = hands.every(h => h.resolved);
 
-    if (!allBusted) {
+    if (!allResolved) {
       while (dealerShouldHit(dealerCards, config)) {
         const card = shoe.draw();
         dealerCards.push(card);
@@ -159,6 +273,17 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
     updateStatsForHands(resolvedHands);
 
+    // Add to hand history
+    resolvedHands.forEach(hand => {
+      addToHistory({
+        playerCards: hand.cards.map(c => c.toString()),
+        dealerCards: dealerCards.map(c => c.toString()),
+        outcome: hand.result,
+        bet: hand.bet,
+        timestamp: Date.now(),
+      });
+    });
+
     const dealerTotal = calculateHandTotal(dealerCards).total;
     const dealerBust = isBust(dealerCards);
     const resultSummary = resolvedHands.length > 1
@@ -180,7 +305,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   const updateStatsForHands = (resolvedHands) => {
     const outcomes = resolvedHands.map(h => h.result);
     const wins = outcomes.filter(o => o === Outcome.WIN || o === Outcome.BLACKJACK).length;
-    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST).length;
+    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST || o === Outcome.SURRENDER).length;
     const bjs = outcomes.filter(o => o === Outcome.BLACKJACK).length;
     const pushCount = outcomes.filter(o => o === Outcome.PUSH).length;
 
@@ -196,7 +321,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Deal initial cards
   const dealInitial = useCallback(() => {
     const shoe = shoeRef.current;
-    
+
     setGameState(prev => {
       const pCard1 = shoe.draw();
       const dCard1 = shoe.draw();
@@ -204,17 +329,15 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       const dCard2 = shoe.draw();
       const playerCards = [pCard1, pCard2];
       const dealerCards = [dCard1, dCard2];
-      
+
       const newPlayerHands = [{
         ...prev.playerHands[0],
         cards: playerCards
       }];
 
-      // Only count face-up cards: player's 2 cards + dealer's up card (index 0)
-      // Dealer's hole card (index 1) is counted when revealed during dealer turn
       const visibleCards = [...playerCards, dealerCards[0]];
       const newRunningCount = updateRunningCount(prev.runningCount, visibleCards);
-      
+
       const playerBJ = isBlackjack(playerCards);
       const dealerShowsAce = dealerCards[0].rank === Rank.ACE;
       const dealerBJ = isBlackjack(dealerCards);
@@ -231,7 +354,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         };
       }
 
-      // For immediate resolution cases, count the dealer's hole card too
       const fullCount = updateRunningCount(newRunningCount, [dealerCards[1]]);
 
       // Immediate resolution
@@ -239,6 +361,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.PUSH;
         updateStatsForHands(newPlayerHands);
+        addToHistory({
+          playerCards: playerCards.map(c => c.toString()),
+          dealerCards: dealerCards.map(c => c.toString()),
+          outcome: Outcome.PUSH,
+          bet: prev.currentBet,
+          timestamp: Date.now(),
+        });
         return {
           ...prev,
           playerHands: newPlayerHands,
@@ -255,6 +384,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.BLACKJACK;
         updateStatsForHands(newPlayerHands);
+        addToHistory({
+          playerCards: playerCards.map(c => c.toString()),
+          dealerCards: dealerCards.map(c => c.toString()),
+          outcome: Outcome.BLACKJACK,
+          bet: prev.currentBet,
+          timestamp: Date.now(),
+        });
         return {
           ...prev,
           playerHands: newPlayerHands,
@@ -270,6 +406,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         newPlayerHands[0].resolved = true;
         newPlayerHands[0].result = Outcome.LOSE;
         updateStatsForHands(newPlayerHands);
+        addToHistory({
+          playerCards: playerCards.map(c => c.toString()),
+          dealerCards: dealerCards.map(c => c.toString()),
+          outcome: Outcome.LOSE,
+          bet: prev.currentBet,
+          timestamp: Date.now(),
+        });
         return {
           ...prev,
           playerHands: newPlayerHands,
@@ -300,7 +443,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       let insuranceBet = 0;
       let message = '';
 
-      // Count the dealer's hole card now that it's being checked
       const newRunningCount = updateRunningCount(prev.runningCount, [prev.dealerCards[1]]);
 
       if (take) {
@@ -334,6 +476,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         }
 
         updateStatsForHands(newHands);
+        addToHistory({
+          playerCards: newHands[0].cards.map(c => c.toString()),
+          dealerCards: prev.dealerCards.map(c => c.toString()),
+          outcome: result,
+          bet: prev.currentBet,
+          timestamp: Date.now(),
+        });
 
         return {
           ...prev,
@@ -359,6 +508,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         newHands[0] = { ...newHands[0], resolved: true, result: Outcome.BLACKJACK };
 
         updateStatsForHands(newHands);
+        addToHistory({
+          playerCards: newHands[0].cards.map(c => c.toString()),
+          dealerCards: prev.dealerCards.map(c => c.toString()),
+          outcome: Outcome.BLACKJACK,
+          bet: prev.currentBet,
+          timestamp: Date.now(),
+        });
 
         return {
           ...prev,
@@ -384,21 +540,26 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Get available actions
   const getAvailableActions = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return [];
-    
+
     const hand = gameState.playerHands[gameState.activeHandIndex];
     if (!hand || hand.resolved) return [];
 
     const actions = ['hit', 'stand'];
-    
+
     if (hand.cards.length === 2) {
       const canDouble = hand.bet <= gameState.bankroll &&
         (!hand.isSplitChild || config.doubleAfterSplit);
       if (canDouble) actions.push('double');
-      
-      if (canSplit(hand.cards) && 
+
+      if (canSplit(hand.cards) &&
           gameState.splitCount < config.maxSplits &&
           hand.bet <= gameState.bankroll) {
         actions.push('split');
+      }
+
+      // Late surrender: only on initial 2 cards, not after split
+      if (config.lateSurrender && !hand.isSplitChild) {
+        actions.push('surrender');
       }
     }
 
@@ -408,6 +569,8 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Hit action
   const hit = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+
+    const feedback = trackDecision('hit');
 
     setGameState(prev => {
       const shoe = shoeRef.current;
@@ -421,24 +584,24 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       newHands[handIndex] = hand;
 
       const newRunningCount = updateRunningCount(prev.runningCount, [card]);
-      
+
       if (isBust(hand.cards)) {
         hand.resolved = true;
         hand.result = Outcome.BUST;
         newHands[handIndex] = hand;
-        
-        // Check for next hand or dealer turn
+
         const nextHandIndex = findNextActiveHand(newHands, handIndex);
         if (nextHandIndex === -1) {
-          return runDealerTurn(prev, newHands, newRunningCount);
+          return { ...runDealerTurn(prev, newHands, newRunningCount), lastStrategyFeedback: feedback };
         }
-        
+
         newHands[nextHandIndex] = { ...newHands[nextHandIndex], isActive: true };
         return {
           ...prev,
           playerHands: newHands,
           runningCount: newRunningCount,
           activeHandIndex: nextHandIndex,
+          lastStrategyFeedback: feedback,
           message: `Hand ${handIndex + 1} busts! Playing hand ${nextHandIndex + 1}`
         };
       }
@@ -448,14 +611,17 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         ...prev,
         playerHands: newHands,
         runningCount: newRunningCount,
+        lastStrategyFeedback: feedback,
         message: `You have ${total}${isSoft ? ' (soft)' : ''}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackDecision]);
 
   // Stand action
   const stand = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+
+    const feedback = trackDecision('stand');
 
     setGameState(prev => {
       const newHands = [...prev.playerHands];
@@ -464,7 +630,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
       const nextHandIndex = findNextActiveHand(newHands, handIndex);
       if (nextHandIndex === -1) {
-        return runDealerTurn(prev, newHands, prev.runningCount);
+        return { ...runDealerTurn(prev, newHands, prev.runningCount), lastStrategyFeedback: feedback };
       }
 
       newHands[nextHandIndex] = { ...newHands[nextHandIndex], isActive: true };
@@ -472,14 +638,17 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         ...prev,
         playerHands: newHands,
         activeHandIndex: nextHandIndex,
+        lastStrategyFeedback: feedback,
         message: `Playing hand ${nextHandIndex + 1}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackDecision]);
 
   // Double action
   const double = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+
+    const feedback = trackDecision('double');
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
@@ -511,7 +680,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
       const nextHandIndex = findNextActiveHand(newHands, prev.activeHandIndex);
       if (nextHandIndex === -1) {
-        return runDealerTurn({ ...prev, bankroll: newBankroll }, newHands, newRunningCount);
+        return { ...runDealerTurn({ ...prev, bankroll: newBankroll }, newHands, newRunningCount), lastStrategyFeedback: feedback };
       }
 
       newHands[nextHandIndex] = { ...newHands[nextHandIndex], isActive: true };
@@ -522,14 +691,17 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         bankroll: newBankroll,
         runningCount: newRunningCount,
         activeHandIndex: nextHandIndex,
+        lastStrategyFeedback: feedback,
         message: `Doubled! ${isBust(newHand.cards) ? 'Bust!' : `Got ${total}`}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackDecision]);
 
   // Split action
   const split = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+
+    const feedback = trackDecision('split');
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
@@ -568,11 +740,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       if (isSplitAces && config.splitAcesOneCardOnly) {
         firstHand.isActive = false;
         secondHand.isActive = false;
-        return runDealerTurn(
-          { ...prev, bankroll: prev.bankroll - hand.bet, splitCount: prev.splitCount + 1 },
-          newHands,
-          newRunningCount
-        );
+        return {
+          ...runDealerTurn(
+            { ...prev, bankroll: prev.bankroll - hand.bet, splitCount: prev.splitCount + 1 },
+            newHands,
+            newRunningCount
+          ),
+          lastStrategyFeedback: feedback,
+        };
       }
 
       return {
@@ -581,10 +756,59 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         bankroll: prev.bankroll - hand.bet,
         runningCount: newRunningCount,
         splitCount: prev.splitCount + 1,
+        lastStrategyFeedback: feedback,
         message: 'Split! Playing first hand'
       };
     });
-  }, [gameState.phase, config]);
+  }, [gameState.phase, config, trackDecision]);
+
+  // Surrender action
+  const surrender = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+
+    const feedback = trackDecision('surrender');
+
+    setGameState(prev => {
+      const hand = prev.playerHands[prev.activeHandIndex];
+      const halfBet = Math.floor(hand.bet / 2);
+
+      const newHands = [...prev.playerHands];
+      newHands[prev.activeHandIndex] = {
+        ...hand,
+        resolved: true,
+        result: Outcome.SURRENDER,
+        isActive: false,
+      };
+
+      // Count dealer hole card
+      let newRunningCount = prev.runningCount;
+      if (prev.dealerCards.length >= 2) {
+        newRunningCount = updateRunningCount(newRunningCount, [prev.dealerCards[1]]);
+      }
+
+      // Return half the bet
+      const newBankroll = prev.bankroll + halfBet;
+
+      updateStatsForHands(newHands.filter(h => h.result === Outcome.SURRENDER));
+      addToHistory({
+        playerCards: hand.cards.map(c => c.toString()),
+        dealerCards: prev.dealerCards.map(c => c.toString()),
+        outcome: Outcome.SURRENDER,
+        bet: hand.bet,
+        timestamp: Date.now(),
+      });
+
+      return {
+        ...prev,
+        playerHands: newHands,
+        bankroll: newBankroll,
+        runningCount: newRunningCount,
+        phase: GamePhase.ROUND_OVER,
+        lastStrategyFeedback: feedback,
+        message: `Surrendered. $${halfBet} returned.`
+      };
+    });
+  }, [gameState.phase, trackDecision]);
 
   // Next round
   const nextRound = useCallback(() => {
@@ -597,6 +821,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       activeHandIndex: 0,
       splitCount: 0,
       phase: GamePhase.BETTING,
+      lastStrategyFeedback: null,
       message: 'Place your bet'
     }));
   }, []);
@@ -615,16 +840,21 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       activeHandIndex: 0,
       insuranceBet: 0,
       splitCount: 0,
+      lastStrategyFeedback: null,
       phase: GamePhase.BETTING,
       message: 'Settings updated. Place your bet.'
     }));
   }, []);
 
   const decksRemaining = shoeRef.current.decksRemaining();
+  const tc = trueCount(gameState.runningCount, decksRemaining);
+  const insuranceDeviation = shouldTakeInsurance(tc);
 
   return {
     gameState,
     stats,
+    strategyStats,
+    handHistory,
     config,
     actions: {
       startRound,
@@ -634,12 +864,18 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       stand,
       double,
       split,
+      surrender,
       nextRound,
       resetGame,
-      updateConfig
+      updateConfig,
+      resetAllData,
     },
     getAvailableActions,
-    decksRemaining
+    getOptimalAction,
+    getDeviationInfo,
+    decksRemaining,
+    trueCount: tc,
+    insuranceDeviation,
   };
 }
 
@@ -653,7 +889,7 @@ export function useCountingTrainer() {
   });
 
   const shoeRef = useRef(null);
-  
+
   const [state, setState] = useState({
     isRunning: false,
     currentCards: [],
@@ -697,7 +933,7 @@ export function useCountingTrainer() {
 
       const shoe = shoeRef.current;
       let currentRC = prev.runningCount;
-      
+
       if (shoe.needsReshuffle()) {
         shoe.buildAndShuffle();
         currentRC = 0;
