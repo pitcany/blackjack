@@ -385,15 +385,20 @@ class TrainingScreen(tk.Frame):
     
     def _start_training(self) -> None:
         """Start a new training session."""
-        # Update config from inputs
+        # Build a new config from UI inputs
         try:
-            self.config.num_decks = int(self.deck_var.get())
-            self.config.drill_type = self.drill_var.get()
-            self.config.cards_per_round = int(self.cards_var.get())
-            self.config.ask_true_count = self.tc_var.get()
-        except ValueError:
+            self.config = CountingTrainerConfig(
+                num_decks=int(self.deck_var.get()),
+                drill_type=self.drill_var.get(),
+                cards_per_round=int(self.cards_var.get()),
+                ask_true_count=self.tc_var.get(),
+                speed_ms_per_card=self.config.speed_ms_per_card,
+                time_limit_seconds=self.config.time_limit_seconds,
+                show_history=self.config.show_history,
+            )
+        except (ValueError, TypeError):
             return
-        
+
         # Start trainer
         self.trainer.start(self.config)
         self.is_training = True

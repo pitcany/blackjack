@@ -76,7 +76,15 @@ class BlackjackEngine:
             self.state.message = "Cannot start a new round now"
             return False
 
-        # Validate bet
+        # Validate bet type and value
+        if not isinstance(bet, int) or isinstance(bet, bool):
+            self.state.message = "Bet must be a whole number"
+            return False
+
+        if bet <= 0:
+            self.state.message = "Bet must be positive"
+            return False
+
         if bet < self.config.min_bet:
             self.state.message = f"Minimum bet is ${self.config.min_bet}"
             return False

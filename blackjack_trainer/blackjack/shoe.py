@@ -63,15 +63,20 @@ class Shoe:
     def draw(self) -> Card:
         """
         Draw a card from the shoe.
-        
+
+        If the shoe is empty and preset cards are not being used,
+        the shoe is automatically rebuilt and reshuffled.
+
         Returns:
             The drawn card
-            
+
         Raises:
-            ValueError: If shoe is empty
+            ValueError: If shoe is empty and using preset cards (test mode)
         """
         if not self._cards:
-            raise ValueError("Shoe is empty! Need to reshuffle.")
+            if self._preset_cards is not None:
+                raise ValueError("Shoe is empty! (preset cards exhausted)")
+            self._build_and_shuffle()
         return self._cards.pop()
     
     def cards_remaining(self) -> int:
