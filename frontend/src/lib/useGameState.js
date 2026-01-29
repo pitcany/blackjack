@@ -509,14 +509,19 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         ...prev,
         playerHands: newHands,
         activeHandIndex: nextHandIndex,
-        message: `Playing hand ${nextHandIndex + 1}`
+        message: `Playing hand ${nextHandIndex + 1}`,
+        lastAction: null,
+        lastActionCorrect: null
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Double action
   const double = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('DOUBLE');
     
     const shoe = shoeRef.current;
     const card = shoe.draw();
