@@ -38,7 +38,8 @@ export const Outcome = {
   LOSE: 'LOSE',
   PUSH: 'PUSH',
   BLACKJACK: 'BLACKJACK',
-  BUST: 'BUST'
+  BUST: 'BUST',
+  SURRENDER: 'SURRENDER'
 };
 
 // Card class
