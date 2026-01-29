@@ -131,7 +131,12 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   const startRound = useCallback((bet) => {
     if (bet < config.minBet) {
       setGameState(prev => ({ ...prev, message: `Minimum bet is $${config.minBet}` }));
-      return;
+      return false;
+    }
+
+    if (bet > gameState.bankroll) {
+      setGameState(prev => ({ ...prev, message: 'Insufficient bankroll' }));
+      return false;
     }
 
     const shoe = shoeRef.current;
@@ -168,7 +173,8 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: 'Dealing...'
       };
     });
-  }, [config.minBet]);
+    return true;
+  }, [config.minBet, gameState.bankroll]);
 
   // Helper: Find next active hand
   const findNextActiveHand = (hands, currentIndex) => {
@@ -481,8 +487,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     const tc = trueCount(gameState.runningCount, decksLeft);
     
     return getOptimalAction(hand.cards, gameState.dealerCards[0], {
-      canDouble: hand.cards.length === 2 && hand.bet <= gameState.bankroll,
-      canSplit: canSplit(hand.cards) && gameState.splitCount < config.maxSplits,
+      canDouble: hand.cards.length === 2 &&
+        hand.bet <= gameState.bankroll &&
+        (!hand.isSplitChild || config.doubleAfterSplit),
+      canSplit: hand.cards.length === 2 &&
+        canSplit(hand.cards) &&
+        gameState.splitCount < config.maxSplits &&
+        hand.bet <= gameState.bankroll,
       canSurrender: config.allowSurrender && hand.cards.length === 2 && !hand.isSplitChild,
       trueCount: tc,
       showDeviations: true
