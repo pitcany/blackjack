@@ -2,16 +2,6 @@
 // Supports H17/S17, DAS/NDAS rules
 // Actions: H=Hit, S=Stand, D=Double(hit if can't), Ds=Double(stand if can't), P=Split, Ph=Split(hit if can't), Rh=Surrender(hit if can't), Rs=Surrender(stand if can't), Rp=Surrender(split if can't)
 
-const ACTION = {
-  H: 'hit',
-  S: 'stand',
-  D: 'double',    // double, else hit
-  Ds: 'double_s', // double, else stand
-  P: 'split',
-  Rh: 'surrender', // surrender, else hit
-  Rs: 'surrender', // surrender, else stand
-};
-
 // Dealer upcard index: 2=0, 3=1, ..., 9=7, 10=8, A=9
 function dealerIndex(upcardValue) {
   if (upcardValue === 11 || upcardValue === 1) return 9; // Ace
@@ -68,12 +58,12 @@ const SOFT_H17 = {
 // Pairs: rows are pair value, columns are dealer 2-A
 // Uses 'P' for split, 'H' for hit, 'S' for stand, 'D' for double
 const PAIRS_S17_DAS = {
-  2:  'PPPPPPPHHHH'.substring(0,10), // 2,2
-  3:  'PPPPPPPHHHH'.substring(0,10), // 3,3
+  2:  'PPPPPPHHHH'.substring(0,10), // 2,2
+  3:  'PPPPPPHHHH'.substring(0,10), // 3,3
   4:  'HHHPPHHHHH', // 4,4
   5:  'DDDDDDDDHH', // 5,5 - never split, treat as 10
-  6:  'PPPPPPHHHHH'.substring(0,10), // 6,6
-  7:  'PPPPPPPHHH', // 7,7
+  6:  'PPPPPHHHHH'.substring(0,10), // 6,6
+  7:  'PPPPPPHHHH', // 7,7
   8:  'PPPPPPPPPP', // 8,8
   9:  'PPPPPSPPSS', // 9,9
   10: 'SSSSSSSSSS', // 10,10
@@ -104,20 +94,19 @@ const PAIRS_H17_NDAS = {
 // Surrender table (late surrender): returns true if should surrender
 // Key: `${playerTotal}_${dealerIndex}`
 const SURRENDER_S17 = {
-  '16_8': true,  // 16 vs 9
-  '16_9': true,  // 16 vs 10
-  '16_10': false, // 16 vs A - no surrender S17
-  '15_9': true,  // 15 vs 10
+  '16_7': true,  // 16 vs 9
+  '16_8': true,  // 16 vs 10
+  '15_8': true,  // 15 vs 10
 };
 
 const SURRENDER_H17 = {
-  '16_8': true,  // 16 vs 9
-  '16_9': true,  // 16 vs 10
-  '16_10': true, // 16 vs A
-  '15_8': true,  // 15 vs 9 (H17 only)
-  '15_9': true,  // 15 vs 10
-  '15_10': true, // 15 vs A
-  '17_10': true, // 17 vs A
+  '16_7': true,  // 16 vs 9
+  '16_8': true,  // 16 vs 10
+  '16_9': true,  // 16 vs A
+  '15_7': true,  // 15 vs 9 (H17 only)
+  '15_8': true,  // 15 vs 10
+  '15_9': true,  // 15 vs A
+  '17_9': true,  // 17 vs A
 };
 
 function charToAction(ch) {
@@ -224,14 +213,14 @@ export function getBasicStrategy({
  * Each entry: { playerTotal, isSoft, dealerUpcard, normalAction, deviationAction, index, description }
  * index = true count at which to deviate
  */
-export const DEVIATION_INDICES = [
+const DEVIATION_INDICES = [
   { playerTotal: 16, isSoft: false, dealerUpcard: 10, normalAction: 'hit', deviationAction: 'stand', index: 0, description: '16 vs 10: Stand at TC >= 0' },
   { playerTotal: 15, isSoft: false, dealerUpcard: 10, normalAction: 'hit', deviationAction: 'stand', index: 4, description: '15 vs 10: Stand at TC >= +4' },
   { playerTotal: 13, isSoft: false, dealerUpcard: 2, normalAction: 'stand', deviationAction: 'hit', index: -1, description: '13 vs 2: Hit at TC <= -1' },
   { playerTotal: 13, isSoft: false, dealerUpcard: 3, normalAction: 'stand', deviationAction: 'hit', index: -2, description: '13 vs 3: Hit at TC <= -2' },
   { playerTotal: 12, isSoft: false, dealerUpcard: 2, normalAction: 'hit', deviationAction: 'stand', index: 3, description: '12 vs 2: Stand at TC >= +3' },
   { playerTotal: 12, isSoft: false, dealerUpcard: 3, normalAction: 'hit', deviationAction: 'stand', index: 2, description: '12 vs 3: Stand at TC >= +2' },
-  { playerTotal: 12, isSoft: false, dealerUpcard: 4, normalAction: 'stand', deviationAction: 'hit', index: 0, description: '12 vs 4: Hit at TC <= -1' },
+  { playerTotal: 12, isSoft: false, dealerUpcard: 4, normalAction: 'stand', deviationAction: 'hit', index: -1, description: '12 vs 4: Hit at TC <= -1' },
   { playerTotal: 11, isSoft: false, dealerUpcard: 11, normalAction: 'hit', deviationAction: 'double', index: 1, description: '11 vs A: Double at TC >= +1' },
   { playerTotal: 10, isSoft: false, dealerUpcard: 10, normalAction: 'hit', deviationAction: 'double', index: 4, description: '10 vs 10: Double at TC >= +4' },
   { playerTotal: 10, isSoft: false, dealerUpcard: 11, normalAction: 'hit', deviationAction: 'double', index: 3, description: '10 vs A: Double at TC >= +3' },
