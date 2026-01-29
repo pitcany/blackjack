@@ -48,6 +48,7 @@ function AppContent() {
   const tabs = [
     { id: 'blackjack', label: 'Blackjack', icon: Spade },
     { id: 'training', label: 'Card Counting', icon: BookOpen },
+    { id: 'coaching', label: 'Coaching', icon: Brain },
     { id: 'stats', label: 'Stats', icon: BarChart3 },
   ];
 
