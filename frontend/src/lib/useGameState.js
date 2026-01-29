@@ -350,6 +350,85 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           hand.bet <= gameState.bankroll) {
         actions.push('split');
       }
+      
+      // Surrender only on initial 2 cards, not after split
+      if (config.allowSurrender && !hand.isSplitChild) {
+        actions.push('surrender');
+      }
+    }
+
+    return actions;
+  }, [gameState, config]);
+
+  // Get optimal action hint
+  const getHint = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return null;
+    
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || hand.resolved || !gameState.dealerCards.length) return null;
+
+    const decksLeft = shoeRef.current.decksRemaining();
+    const tc = trueCount(gameState.runningCount, decksLeft);
+    
+    return getOptimalAction(hand.cards, gameState.dealerCards[0], {
+      canDouble: hand.cards.length === 2 && hand.bet <= gameState.bankroll,
+      canSplit: canSplit(hand.cards) && gameState.splitCount < config.maxSplits,
+      canSurrender: config.allowSurrender && hand.cards.length === 2 && !hand.isSplitChild,
+      trueCount: tc,
+      showDeviations: true
+    });
+  }, [gameState, config]);
+
+  // Track action for strategy stats
+  const trackAction = useCallback((action) => {
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || !gameState.dealerCards.length) return;
+
+    const decksLeft = shoeRef.current.decksRemaining();
+    const tc = trueCount(gameState.runningCount, decksLeft);
+    
+    const evaluation = evaluateAction(action, hand.cards, gameState.dealerCards[0], {
+      canDouble: hand.cards.length === 2,
+      canSplit: canSplit(hand.cards),
+      canSurrender: config.allowSurrender && !hand.isSplitChild,
+      trueCount: tc
+    });
+
+    setGameState(prev => ({
+      ...prev,
+      lastAction: action,
+      lastActionCorrect: evaluation.isCorrect,
+      optimalAction: evaluation.optimalAction
+    }));
+
+    setStrategyStats(prev => {
+      const newStats = {
+        ...prev,
+        totalDecisions: prev.totalDecisions + 1,
+        correctDecisions: prev.correctDecisions + (evaluation.isCorrect ? 1 : 0)
+      };
+
+      if (!evaluation.isCorrect) {
+        const total = calculateHandTotal(hand.cards).total;
+        const dealerVal = gameState.dealerCards[0].rank?.symbol || gameState.dealerCards[0].symbol;
+        const mistakeKey = `${total}_vs_${dealerVal}`;
+        newStats.mistakes = {
+          ...prev.mistakes,
+          [mistakeKey]: {
+            count: (prev.mistakes[mistakeKey]?.count || 0) + 1,
+            correct: evaluation.optimalAction,
+            wrong: action
+          }
+        };
+      }
+
+      return newStats;
+    });
+
+    return evaluation;
+  }, [gameState, config]);
+        actions.push('split');
+      }
     }
 
     return actions;
