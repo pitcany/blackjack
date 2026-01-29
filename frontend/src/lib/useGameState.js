@@ -104,14 +104,25 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       runningCount: 0,
       activeHandIndex: 0,
       insuranceBet: 0,
-      splitCount: 0
+      splitCount: 0,
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     });
     setStats({
       handsPlayed: 0,
       handsWon: 0,
       handsLost: 0,
       blackjacks: 0,
-      pushes: 0
+      pushes: 0,
+      surrenders: 0,
+      totalWagered: 0,
+      totalWon: 0
+    });
+    setStrategyStats({
+      totalDecisions: 0,
+      correctDecisions: 0,
+      mistakes: {}
     });
   }, [config]);
 
