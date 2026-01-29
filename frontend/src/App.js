@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { GameTable } from '@/components/GameTable';
 import { CountingTrainer } from '@/components/CountingTrainer';
+import { StatsPanel } from '@/components/StatsPanel';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { useBlackjackGame } from '@/lib/useGameState';
-import { Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, BookOpen } from 'lucide-react';
+import { Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, BookOpen, BarChart3 } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('blackjack');
@@ -17,16 +18,24 @@ function App() {
   const { 
     gameState, 
     stats, 
+    strategyStats,
     config, 
     actions, 
-    getAvailableActions, 
+    getAvailableActions,
+    getHint,
     decksRemaining 
   } = useBlackjackGame();
 
   const tabs = [
     { id: 'blackjack', label: 'Blackjack', icon: Spade },
     { id: 'training', label: 'Card Counting', icon: BookOpen },
+    { id: 'stats', label: 'Stats', icon: BarChart3 },
   ];
+
+  // Calculate strategy accuracy for header
+  const strategyAccuracy = strategyStats.totalDecisions > 0
+    ? Math.round((strategyStats.correctDecisions / strategyStats.totalDecisions) * 100)
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-casino">
@@ -79,6 +88,19 @@ function App() {
                     <TrendingUp className="w-3 h-3 text-success" />
                     {stats.blackjacks} BJ
                   </Badge>
+                  {strategyAccuracy !== null && (
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "gap-1",
+                        strategyAccuracy >= 80 ? "text-success border-success/30" :
+                        strategyAccuracy >= 60 ? "text-warning border-warning/30" :
+                        "text-destructive border-destructive/30"
+                      )}
+                    >
+                      {strategyAccuracy}% Accuracy
+                    </Badge>
+                  )}
                 </div>
               )}
               <Button 
@@ -101,11 +123,14 @@ function App() {
             gameState={gameState}
             actions={actions}
             getAvailableActions={getAvailableActions}
+            getHint={getHint}
             decksRemaining={decksRemaining}
             config={config}
           />
-        ) : (
+        ) : activeTab === 'training' ? (
           <CountingTrainer />
+        ) : (
+          <StatsPanel />
         )}
       </main>
 

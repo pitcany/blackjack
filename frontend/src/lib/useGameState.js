@@ -1,8 +1,7 @@
 // Game state management with React hooks
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Shoe,
-  Card,
   GamePhase,
   Outcome,
   calculateHandTotal,
@@ -15,33 +14,83 @@ import {
   updateRunningCount,
   hiLoValue,
   defaultConfig,
-  Rank
+  Rank,
+  trueCount
 } from './gameLogic';
+import {
+  saveGameState,
+  loadGameState,
+  saveGameStats,
+  loadGameStats,
+  saveGameConfig,
+  loadGameConfig,
+  addHandToHistory,
+  saveStrategyStats,
+  loadStrategyStats
+} from './storage';
+import { getOptimalAction, evaluateAction } from './basicStrategy';
 
 export function useBlackjackGame(initialConfig = defaultConfig) {
-  const [config, setConfig] = useState(initialConfig);
+  // Load saved config or use initial
+  const savedConfig = loadGameConfig();
+  const [config, setConfig] = useState(savedConfig || initialConfig);
   const shoeRef = useRef(new Shoe(config.numDecks, config.penetration));
   
+  // Load saved state or use defaults
+  const savedState = loadGameState();
   const [gameState, setGameState] = useState({
-    bankroll: config.startingBankroll,
+    bankroll: savedState?.bankroll || config.startingBankroll,
     currentBet: 0,
     playerHands: [],
     dealerCards: [],
     phase: GamePhase.BETTING,
     message: 'Place your bet to begin',
-    runningCount: 0,
+    runningCount: savedState?.runningCount || 0,
     activeHandIndex: 0,
     insuranceBet: 0,
-    splitCount: 0
+    splitCount: 0,
+    lastAction: null,
+    lastActionCorrect: null,
+    optimalAction: null
   });
 
-  const [stats, setStats] = useState({
+  // Load saved stats
+  const savedStats = loadGameStats();
+  const [stats, setStats] = useState(savedStats || {
     handsPlayed: 0,
     handsWon: 0,
     handsLost: 0,
     blackjacks: 0,
-    pushes: 0
+    pushes: 0,
+    surrenders: 0,
+    totalWagered: 0,
+    totalWon: 0
   });
+
+  // Load strategy stats
+  const savedStrategyStats = loadStrategyStats();
+  const [strategyStats, setStrategyStats] = useState(savedStrategyStats || {
+    totalDecisions: 0,
+    correctDecisions: 0,
+    mistakes: {}
+  });
+
+  // Save state and stats when they change
+  useEffect(() => {
+    saveGameState({ bankroll: gameState.bankroll, runningCount: gameState.runningCount });
+  }, [gameState.bankroll, gameState.runningCount]);
+
+  useEffect(() => {
+    saveGameStats(stats);
+  }, [stats]);
+
+  useEffect(() => {
+    saveStrategyStats(strategyStats);
+  }, [strategyStats]);
+
+  useEffect(() => {
+    saveGameConfig(config);
+  }, [config]);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -56,14 +105,25 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       runningCount: 0,
       activeHandIndex: 0,
       insuranceBet: 0,
-      splitCount: 0
+      splitCount: 0,
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     });
     setStats({
       handsPlayed: 0,
       handsWon: 0,
       handsLost: 0,
       blackjacks: 0,
-      pushes: 0
+      pushes: 0,
+      surrenders: 0,
+      totalWagered: 0,
+      totalWon: 0
+    });
+    setStrategyStats({
+      totalDecisions: 0,
+      correctDecisions: 0,
+      mistakes: {}
     });
   }, [config]);
 
@@ -400,14 +460,91 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           hand.bet <= gameState.bankroll) {
         actions.push('split');
       }
+      
+      // Surrender only on initial 2 cards, not after split
+      if (config.allowSurrender && !hand.isSplitChild) {
+        actions.push('surrender');
+      }
     }
 
     return actions;
   }, [gameState, config]);
 
+  // Get optimal action hint
+  const getHint = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return null;
+    
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || hand.resolved || !gameState.dealerCards.length) return null;
+
+    const decksLeft = shoeRef.current.decksRemaining();
+    const tc = trueCount(gameState.runningCount, decksLeft);
+    
+    return getOptimalAction(hand.cards, gameState.dealerCards[0], {
+      canDouble: hand.cards.length === 2 && hand.bet <= gameState.bankroll,
+      canSplit: canSplit(hand.cards) && gameState.splitCount < config.maxSplits,
+      canSurrender: config.allowSurrender && hand.cards.length === 2 && !hand.isSplitChild,
+      trueCount: tc,
+      showDeviations: true
+    });
+  }, [gameState, config]);
+
+  // Track action for strategy stats
+  const trackAction = useCallback((action) => {
+    const hand = gameState.playerHands[gameState.activeHandIndex];
+    if (!hand || !gameState.dealerCards.length) return;
+
+    const decksLeft = shoeRef.current.decksRemaining();
+    const tc = trueCount(gameState.runningCount, decksLeft);
+    
+    const evaluation = evaluateAction(action, hand.cards, gameState.dealerCards[0], {
+      canDouble: hand.cards.length === 2,
+      canSplit: canSplit(hand.cards),
+      canSurrender: config.allowSurrender && !hand.isSplitChild,
+      trueCount: tc
+    });
+
+    setGameState(prev => ({
+      ...prev,
+      lastAction: action,
+      lastActionCorrect: evaluation.isCorrect,
+      optimalAction: evaluation.optimalAction
+    }));
+
+    setStrategyStats(prev => {
+      const newStats = {
+        ...prev,
+        totalDecisions: prev.totalDecisions + 1,
+        correctDecisions: prev.correctDecisions + (evaluation.isCorrect ? 1 : 0)
+      };
+
+      if (!evaluation.isCorrect) {
+        const total = calculateHandTotal(hand.cards).total;
+        const dealerVal = gameState.dealerCards[0]?.rank?.symbol || gameState.dealerCards[0]?.symbol || '?';
+        const mistakeKey = `${total}_vs_${dealerVal}`;
+        const prevMistakes = prev.mistakes || {};
+        newStats.mistakes = {
+          ...prevMistakes,
+          [mistakeKey]: {
+            count: (prevMistakes[mistakeKey]?.count || 0) + 1,
+            correct: evaluation.optimalAction,
+            wrong: action
+          }
+        };
+      }
+
+      return newStats;
+    });
+
+    return evaluation;
+  }, [gameState, config]);
+
   // Hit action
   const hit = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('HIT');
 
     setGameState(prev => {
       const shoe = shoeRef.current;
@@ -439,7 +576,9 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           playerHands: newHands,
           runningCount: newRunningCount,
           activeHandIndex: nextHandIndex,
-          message: `Hand ${handIndex + 1} busts! Playing hand ${nextHandIndex + 1}`
+          message: `Hand ${handIndex + 1} busts! Playing hand ${nextHandIndex + 1}`,
+          lastAction: null,
+          lastActionCorrect: null
         };
       }
 
@@ -451,11 +590,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `You have ${total}${isSoft ? ' (soft)' : ''}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Stand action
   const stand = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('STAND');
 
     setGameState(prev => {
       const newHands = [...prev.playerHands];
@@ -472,14 +614,19 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         ...prev,
         playerHands: newHands,
         activeHandIndex: nextHandIndex,
-        message: `Playing hand ${nextHandIndex + 1}`
+        message: `Playing hand ${nextHandIndex + 1}`,
+        lastAction: null,
+        lastActionCorrect: null
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Double action
   const double = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('DOUBLE');
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
@@ -525,11 +672,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `Doubled! ${isBust(newHand.cards) ? 'Bust!' : `Got ${total}`}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Split action
   const split = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('SPLIT');
 
     setGameState(prev => {
       const hand = prev.playerHands[prev.activeHandIndex];
@@ -581,10 +731,74 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         bankroll: prev.bankroll - hand.bet,
         runningCount: newRunningCount,
         splitCount: prev.splitCount + 1,
-        message: 'Split! Playing first hand'
+        message: 'Split! Playing first hand',
+        lastAction: null,
+        lastActionCorrect: null
       };
     });
-  }, [gameState.phase, config]);
+  }, [gameState.phase, config, trackAction]);
+
+  // Surrender action
+  const surrender = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    if (!config.allowSurrender) return;
+    
+    // Track the action
+    trackAction('SURRENDER');
+
+    setGameState(prev => {
+      const hand = prev.playerHands[prev.activeHandIndex];
+      
+      // Surrender only allowed on initial 2 cards, not after split
+      if (hand.cards.length !== 2 || hand.isSplitChild) {
+        return { ...prev, message: 'Cannot surrender this hand' };
+      }
+
+      const newHands = [...prev.playerHands];
+      newHands[prev.activeHandIndex] = {
+        ...hand,
+        resolved: true,
+        result: Outcome.SURRENDER,
+        isActive: false
+      };
+
+      // Return half the bet
+      const halfBet = Math.floor(hand.bet / 2);
+      const newBankroll = prev.bankroll + halfBet;
+
+      // Check for next hand or finish
+      const nextHandIndex = findNextActiveHand(newHands, prev.activeHandIndex);
+      if (nextHandIndex === -1) {
+        // Update stats for surrender
+        setStats(s => ({
+          ...s,
+          handsPlayed: s.handsPlayed + 1,
+          surrenders: (s.surrenders || 0) + 1
+        }));
+
+        return {
+          ...prev,
+          playerHands: newHands,
+          bankroll: newBankroll,
+          phase: GamePhase.ROUND_OVER,
+          message: `Surrendered. Half bet ($${halfBet}) returned.`,
+          lastAction: null,
+          lastActionCorrect: null
+        };
+      }
+
+      newHands[nextHandIndex] = { ...newHands[nextHandIndex], isActive: true };
+      return {
+        ...prev,
+        playerHands: newHands,
+        bankroll: newBankroll,
+        activeHandIndex: nextHandIndex,
+        message: `Surrendered hand ${prev.activeHandIndex + 1}. Playing hand ${nextHandIndex + 1}`,
+        lastAction: null,
+        lastActionCorrect: null
+      };
+    });
+  }, [gameState.phase, config, trackAction]);
 
   // Next round
   const nextRound = useCallback(() => {
@@ -597,7 +811,10 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       activeHandIndex: 0,
       splitCount: 0,
       phase: GamePhase.BETTING,
-      message: 'Place your bet'
+      message: 'Place your bet',
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     }));
   }, []);
 
@@ -616,7 +833,10 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       insuranceBet: 0,
       splitCount: 0,
       phase: GamePhase.BETTING,
-      message: 'Settings updated. Place your bet.'
+      message: 'Settings updated. Place your bet.',
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     }));
   }, []);
 
@@ -625,6 +845,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   return {
     gameState,
     stats,
+    strategyStats,
     config,
     actions: {
       startRound,
@@ -634,12 +855,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       stand,
       double,
       split,
+      surrender,
       nextRound,
       resetGame,
       updateConfig
     },
     getAvailableActions,
-    decksRemaining
+    getHint,
+    decksRemaining: shoeRef.current.decksRemaining()
   };
 }
 
