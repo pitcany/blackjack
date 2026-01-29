@@ -71,7 +71,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   const startRound = useCallback((bet) => {
     if (bet < config.minBet) {
       setGameState(prev => ({ ...prev, message: `Minimum bet is $${config.minBet}` }));
-      return false;
+      return;
     }
 
     const shoe = shoeRef.current;
