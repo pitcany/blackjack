@@ -110,6 +110,23 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     });
   }, [config.minBet]);
 
+  // Helper: Update stats for resolved hands
+  const updateStatsForHands = (resolvedHands) => {
+    const outcomes = resolvedHands.map(h => h.result);
+    const wins = outcomes.filter(o => o === Outcome.WIN || o === Outcome.BLACKJACK).length;
+    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST).length;
+    const bjs = outcomes.filter(o => o === Outcome.BLACKJACK).length;
+    const pushCount = outcomes.filter(o => o === Outcome.PUSH).length;
+
+    setStats(prev => ({
+      handsPlayed: prev.handsPlayed + resolvedHands.length,
+      handsWon: prev.handsWon + wins,
+      handsLost: prev.handsLost + losses,
+      blackjacks: prev.blackjacks + bjs,
+      pushes: prev.pushes + pushCount
+    }));
+  };
+
   // Deal initial cards
   const dealInitial = useCallback(() => {
     const shoe = shoeRef.current;
@@ -498,23 +515,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       };
     });
   }, [gameState.phase, config]);
-
-  // Helper: Update stats for resolved hands
-  const updateStatsForHands = (resolvedHands) => {
-    const outcomes = resolvedHands.map(h => h.result);
-    const wins = outcomes.filter(o => o === Outcome.WIN || o === Outcome.BLACKJACK).length;
-    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST).length;
-    const bjs = outcomes.filter(o => o === Outcome.BLACKJACK).length;
-    const pushCount = outcomes.filter(o => o === Outcome.PUSH).length;
-
-    setStats(prev => ({
-      handsPlayed: prev.handsPlayed + resolvedHands.length,
-      handsWon: prev.handsWon + wins,
-      handsLost: prev.handsLost + losses,
-      blackjacks: prev.blackjacks + bjs,
-      pushes: prev.pushes + pushCount
-    }));
-  };
 
   // Helper: Find next active hand
   const findNextActiveHand = (hands, currentIndex) => {
