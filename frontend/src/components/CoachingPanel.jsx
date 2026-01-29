@@ -616,7 +616,7 @@ export function CoachingPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-center text-muted-foreground">What's the optimal play?</p>
+                <p className="text-center text-muted-foreground">What&apos;s the optimal play?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button 
                     variant="outline" 
