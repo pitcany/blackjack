@@ -567,11 +567,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `Doubled! ${isBust(newHand.cards) ? 'Bust!' : `Got ${total}`}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Split action
   const split = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('SPLIT');
     
     const shoe = shoeRef.current;
 
@@ -624,10 +627,74 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         bankroll: prev.bankroll - hand.bet,
         runningCount: newRunningCount,
         splitCount: prev.splitCount + 1,
-        message: 'Split! Playing first hand'
+        message: 'Split! Playing first hand',
+        lastAction: null,
+        lastActionCorrect: null
       };
     });
-  }, [gameState.phase, config]);
+  }, [gameState.phase, config, trackAction]);
+
+  // Surrender action
+  const surrender = useCallback(() => {
+    if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    if (!config.allowSurrender) return;
+    
+    // Track the action
+    trackAction('SURRENDER');
+
+    setGameState(prev => {
+      const hand = prev.playerHands[prev.activeHandIndex];
+      
+      // Surrender only allowed on initial 2 cards, not after split
+      if (hand.cards.length !== 2 || hand.isSplitChild) {
+        return { ...prev, message: 'Cannot surrender this hand' };
+      }
+
+      const newHands = [...prev.playerHands];
+      newHands[prev.activeHandIndex] = {
+        ...hand,
+        resolved: true,
+        result: Outcome.SURRENDER,
+        isActive: false
+      };
+
+      // Return half the bet
+      const halfBet = Math.floor(hand.bet / 2);
+      const newBankroll = prev.bankroll + halfBet;
+
+      // Check for next hand or finish
+      const nextHandIndex = findNextActiveHand(newHands, prev.activeHandIndex);
+      if (nextHandIndex === -1) {
+        // Update stats for surrender
+        setStats(s => ({
+          ...s,
+          handsPlayed: s.handsPlayed + 1,
+          surrenders: (s.surrenders || 0) + 1
+        }));
+
+        return {
+          ...prev,
+          playerHands: newHands,
+          bankroll: newBankroll,
+          phase: GamePhase.ROUND_OVER,
+          message: `Surrendered. Half bet ($${halfBet}) returned.`,
+          lastAction: null,
+          lastActionCorrect: null
+        };
+      }
+
+      newHands[nextHandIndex] = { ...newHands[nextHandIndex], isActive: true };
+      return {
+        ...prev,
+        playerHands: newHands,
+        bankroll: newBankroll,
+        activeHandIndex: nextHandIndex,
+        message: `Surrendered hand ${prev.activeHandIndex + 1}. Playing hand ${nextHandIndex + 1}`,
+        lastAction: null,
+        lastActionCorrect: null
+      };
+    });
+  }, [gameState.phase, config, trackAction]);
 
   // Helper: Find next active hand
   const findNextActiveHand = (hands, currentIndex) => {
