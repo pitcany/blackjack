@@ -26,6 +26,8 @@ import { AlertTriangle, Trash2, User, Cloud, RefreshCw, LogIn, LogOut, Loader2, 
 export function SettingsDialog({ open, onOpenChange, config, onApply }) {
   const [settings, setSettings] = useState(config);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   const handleApply = () => {
     onApply(settings);
