@@ -649,36 +649,41 @@ export function useCountingTrainer() {
   }, []);
 
   const dealRound = useCallback(() => {
-    if (!state.isRunning || !shoeRef.current) return;
+    setState(prev => {
+      if (!prev.isRunning || !shoeRef.current) return prev;
 
-    const shoe = shoeRef.current;
-    if (shoe.needsReshuffle()) {
-      shoe.buildAndShuffle();
-      setState(prev => ({ ...prev, runningCount: 0 }));
-    }
+      const shoe = shoeRef.current;
+      let currentRC = prev.runningCount;
+      
+      if (shoe.needsReshuffle()) {
+        shoe.buildAndShuffle();
+        currentRC = 0;
+      }
 
-    let numCards;
-    switch (config.drillType) {
-      case 'hand': numCards = 2; break;
-      case 'round': numCards = 4; break;
-      default: numCards = config.cardsPerRound;
-    }
+      let numCards;
+      switch (config.drillType) {
+        case 'hand': numCards = 2; break;
+        case 'round': numCards = 4; break;
+        default: numCards = config.cardsPerRound;
+      }
 
-    const cards = [];
-    for (let i = 0; i < numCards && shoe.cardsRemaining() > 0; i++) {
-      cards.push(shoe.draw());
-    }
+      const cards = [];
+      for (let i = 0; i < numCards && shoe.cardsRemaining() > 0; i++) {
+        cards.push(shoe.draw());
+      }
 
-    const expectedRC = updateRunningCount(state.runningCount, cards);
+      const expectedRC = updateRunningCount(currentRC, cards);
 
-    setState(prev => ({
-      ...prev,
-      currentCards: cards,
-      expectedRC,
-      feedback: null,
-      showingCards: true
-    }));
-  }, [state.isRunning, state.runningCount, config]);
+      return {
+        ...prev,
+        currentCards: cards,
+        expectedRC,
+        runningCount: currentRC,
+        feedback: null,
+        showingCards: true
+      };
+    });
+  }, [config]);
 
   const submitGuess = useCallback((rcGuess, tcGuess = null) => {
     const isCorrectRC = rcGuess === state.expectedRC;
