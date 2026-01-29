@@ -79,13 +79,17 @@ export function CoachingPanel() {
     isComplete: false
   });
   const [showAnswer, setShowAnswer] = useState(false);
+  const isInitialMount = useRef(true);
 
-  // Load data on mount and when needed
+  // Load data on mount
   useEffect(() => {
-    const strategyStats = loadStrategyStats();
-    const analyzed = analyzeWeaknesses(strategyStats);
-    setWeaknesses(analyzed);
-    setPerformanceStats(getPerformanceStats());
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      const strategyStats = loadStrategyStats();
+      const analyzed = analyzeWeaknesses(strategyStats);
+      setWeaknesses(analyzed);
+      setPerformanceStats(getPerformanceStats());
+    }
   }, []);
 
   const refreshData = useCallback(() => {
