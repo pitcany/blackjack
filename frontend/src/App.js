@@ -179,6 +179,8 @@ function AppContent() {
           />
         ) : activeTab === 'training' ? (
           <CountingTrainer />
+        ) : activeTab === 'coaching' ? (
+          <CoachingPanel />
         ) : (
           <StatsPanel />
         )}
