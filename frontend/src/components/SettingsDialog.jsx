@@ -226,6 +226,82 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
 
           <Separator />
 
+          {/* Account & Sync */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Account & Cloud Sync
+            </h4>
+
+            {isAuthenticated && user ? (
+              <>
+                {/* User Info */}
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.picture} alt={user.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <Badge variant="outline" className="text-success border-success/30 text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Synced
+                  </Badge>
+                </div>
+
+                {/* Sync Button */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="flex-1"
+                    data-testid="settings-sync-button"
+                  >
+                    {syncing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    data-testid="settings-logout-button"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {syncStatus.lastSync && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Last synced: {new Date(syncStatus.lastSync).toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to sync your progress across devices.
+                </p>
+                <Button
+                  onClick={login}
+                  className="w-full"
+                  data-testid="settings-login-button"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign in with Google
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Data Management */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
