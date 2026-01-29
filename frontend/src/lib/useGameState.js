@@ -427,12 +427,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
 
     return evaluation;
   }, [gameState, config]);
-        actions.push('split');
-      }
-    }
-
-    return actions;
-  }, [gameState, config]);
 
   // Hit action
   const hit = useCallback(() => {
