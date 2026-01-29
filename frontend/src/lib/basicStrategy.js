@@ -418,12 +418,24 @@ export function getActionExplanation(action, playerTotal, dealerUpcard, isSoft, 
  * Compare player's action to optimal and return feedback
  */
 export function evaluateAction(playerAction, playerCards, dealerUpcard, options = {}) {
+  // Guard against invalid inputs
+  if (!playerCards || playerCards.length === 0 || !dealerUpcard) {
+    return {
+      isCorrect: true,
+      playerAction: playerAction?.toUpperCase() || 'UNKNOWN',
+      optimalAction: 'UNKNOWN',
+      reason: 'Unable to evaluate',
+      isDeviation: false,
+      deviationInfo: null
+    };
+  }
+
   const optimal = getOptimalAction(playerCards, dealerUpcard, options);
-  const isCorrect = playerAction.toUpperCase() === optimal.action.toUpperCase();
+  const isCorrect = playerAction?.toUpperCase() === optimal.action?.toUpperCase();
   
   return {
     isCorrect,
-    playerAction: playerAction.toUpperCase(),
+    playerAction: playerAction?.toUpperCase() || 'UNKNOWN',
     optimalAction: optimal.action,
     reason: optimal.reason,
     isDeviation: optimal.isDeviation,
