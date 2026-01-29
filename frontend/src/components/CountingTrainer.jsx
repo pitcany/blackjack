@@ -27,8 +27,15 @@ export function CountingTrainer() {
 
   const handleStart = () => {
     actions.start(settings);
-    setTimeout(() => actions.dealRound(), 100);
   };
+
+  // Deal round when training starts
+  React.useEffect(() => {
+    if (state.isRunning && state.currentCards.length === 0 && !state.feedback) {
+      const timer = setTimeout(() => actions.dealRound(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [state.isRunning, state.currentCards.length, state.feedback, actions]);
 
   const handleSubmit = () => {
     const rc = parseInt(rcGuess);
