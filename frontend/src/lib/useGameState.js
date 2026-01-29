@@ -110,6 +110,72 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     });
   }, [config.minBet]);
 
+  // Helper: Find next active hand
+  const findNextActiveHand = (hands, currentIndex) => {
+    for (let i = currentIndex + 1; i < hands.length; i++) {
+      if (!hands[i].resolved && !isBust(hands[i].cards)) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  // Helper: Run dealer turn
+  const runDealerTurn = (prevState, hands, runningCount) => {
+    const shoe = shoeRef.current;
+    let dealerCards = [...prevState.dealerCards];
+    let newRunningCount = runningCount;
+
+    // Count the dealer's hole card now that it's revealed
+    if (dealerCards.length >= 2) {
+      newRunningCount = updateRunningCount(newRunningCount, [dealerCards[1]]);
+    }
+
+    // Check if all player hands busted
+    const allBusted = hands.every(h => h.resolved && h.result === Outcome.BUST);
+
+    if (!allBusted) {
+      while (dealerShouldHit(dealerCards, config)) {
+        const card = shoe.draw();
+        dealerCards.push(card);
+        newRunningCount = updateRunningCount(newRunningCount, [card]);
+      }
+    }
+
+    // Resolve all hands
+    let newBankroll = prevState.bankroll;
+    const resolvedHands = hands.map(hand => {
+      if (hand.resolved) return hand;
+
+      const outcome = compareHands(hand.cards, dealerCards, hand.isSplitChild);
+      const payout = calculatePayout(outcome, hand.bet, config);
+
+      if (outcome === Outcome.WIN || outcome === Outcome.BLACKJACK || outcome === Outcome.PUSH) {
+        newBankroll += hand.bet + payout;
+      }
+
+      return { ...hand, resolved: true, result: outcome };
+    });
+
+    updateStatsForHands(resolvedHands);
+
+    const dealerTotal = calculateHandTotal(dealerCards).total;
+    const dealerBust = isBust(dealerCards);
+    const resultSummary = resolvedHands.length > 1
+      ? resolvedHands.map((h, i) => `Hand ${i+1}: ${h.result}`).join(', ')
+      : resolvedHands[0]?.result || '';
+
+    return {
+      ...prevState,
+      playerHands: resolvedHands,
+      dealerCards,
+      bankroll: newBankroll,
+      runningCount: newRunningCount,
+      phase: GamePhase.ROUND_OVER,
+      message: `Dealer: ${dealerTotal}${dealerBust ? ' (Bust!)' : ''}. ${resultSummary}`
+    };
+  };
+
   // Helper: Update stats for resolved hands
   const updateStatsForHands = (resolvedHands) => {
     const outcomes = resolvedHands.map(h => h.result);
@@ -515,72 +581,6 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       };
     });
   }, [gameState.phase, config]);
-
-  // Helper: Find next active hand
-  const findNextActiveHand = (hands, currentIndex) => {
-    for (let i = currentIndex + 1; i < hands.length; i++) {
-      if (!hands[i].resolved && !isBust(hands[i].cards)) {
-        return i;
-      }
-    }
-    return -1;
-  };
-
-  // Helper: Run dealer turn
-  const runDealerTurn = (prevState, hands, runningCount) => {
-    const shoe = shoeRef.current;
-    let dealerCards = [...prevState.dealerCards];
-    let newRunningCount = runningCount;
-
-    // Count the dealer's hole card now that it's revealed
-    if (dealerCards.length >= 2) {
-      newRunningCount = updateRunningCount(newRunningCount, [dealerCards[1]]);
-    }
-
-    // Check if all player hands busted
-    const allBusted = hands.every(h => h.resolved && h.result === Outcome.BUST);
-
-    if (!allBusted) {
-      while (dealerShouldHit(dealerCards, config)) {
-        const card = shoe.draw();
-        dealerCards.push(card);
-        newRunningCount = updateRunningCount(newRunningCount, [card]);
-      }
-    }
-
-    // Resolve all hands
-    let newBankroll = prevState.bankroll;
-    const resolvedHands = hands.map(hand => {
-      if (hand.resolved) return hand;
-      
-      const outcome = compareHands(hand.cards, dealerCards, hand.isSplitChild);
-      const payout = calculatePayout(outcome, hand.bet, config);
-      
-      if (outcome === Outcome.WIN || outcome === Outcome.BLACKJACK || outcome === Outcome.PUSH) {
-        newBankroll += hand.bet + payout;
-      }
-
-      return { ...hand, resolved: true, result: outcome };
-    });
-
-    updateStatsForHands(resolvedHands);
-
-    const dealerTotal = calculateHandTotal(dealerCards).total;
-    const dealerBust = isBust(dealerCards);
-    const resultSummary = resolvedHands.length > 1
-      ? resolvedHands.map((h, i) => `Hand ${i+1}: ${h.result}`).join(', ')
-      : resolvedHands[0]?.result || '';
-
-    return {
-      ...prevState,
-      playerHands: resolvedHands,
-      dealerCards,
-      bankroll: newBankroll,
-      runningCount: newRunningCount,
-      phase: GamePhase.ROUND_OVER,
-      message: `Dealer: ${dealerTotal}${dealerBust ? ' (Bust!)' : ''}. ${resultSummary}`
-    };
-  };
 
   // Next round
   const nextRound = useCallback(() => {
