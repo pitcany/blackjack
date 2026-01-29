@@ -438,6 +438,9 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   const hit = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
     
+    // Track the action
+    trackAction('HIT');
+    
     const shoe = shoeRef.current;
     const card = shoe.draw();
 
@@ -468,7 +471,9 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
           playerHands: newHands,
           runningCount: newRunningCount,
           activeHandIndex: nextHandIndex,
-          message: `Hand ${handIndex + 1} busts! Playing hand ${nextHandIndex + 1}`
+          message: `Hand ${handIndex + 1} busts! Playing hand ${nextHandIndex + 1}`,
+          lastAction: null,
+          lastActionCorrect: null
         };
       }
 
@@ -480,11 +485,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `You have ${total}${isSoft ? ' (soft)' : ''}`
       };
     });
-  }, [gameState.phase]);
+  }, [gameState.phase, trackAction]);
 
   // Stand action
   const stand = useCallback(() => {
     if (gameState.phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Track the action
+    trackAction('STAND');
 
     setGameState(prev => {
       const newHands = [...prev.playerHands];
