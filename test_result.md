@@ -227,9 +227,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "JavaScript Runtime Errors"
-  stuck_tasks:
-    - "JavaScript Runtime Errors"
+    - "All features verified and working"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
