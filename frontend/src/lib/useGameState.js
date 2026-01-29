@@ -781,7 +781,10 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       activeHandIndex: 0,
       splitCount: 0,
       phase: GamePhase.BETTING,
-      message: 'Place your bet'
+      message: 'Place your bet',
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     }));
   }, []);
 
@@ -794,13 +797,17 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       bankroll: newConfig.startingBankroll,
       runningCount: 0,
       phase: GamePhase.BETTING,
-      message: 'Settings updated. Place your bet.'
+      message: 'Settings updated. Place your bet.',
+      lastAction: null,
+      lastActionCorrect: null,
+      optimalAction: null
     }));
   }, []);
 
   return {
     gameState,
     stats,
+    strategyStats,
     config,
     actions: {
       startRound,
@@ -810,11 +817,13 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       stand,
       double,
       split,
+      surrender,
       nextRound,
       resetGame,
       updateConfig
     },
     getAvailableActions,
+    getHint,
     decksRemaining: shoeRef.current.decksRemaining()
   };
 }
