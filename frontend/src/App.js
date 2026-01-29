@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { GameTable } from '@/components/GameTable';
 import { CountingTrainer } from '@/components/CountingTrainer';
 import { StatsPanel } from '@/components/StatsPanel';
+import { CoachingPanel } from '@/components/CoachingPanel';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { AuthDialog } from '@/components/AuthDialog';
 import { useBlackjackGame } from '@/lib/useGameState';
@@ -15,7 +16,7 @@ import { AuthProvider, useAuth } from '@/lib/authContext';
 import { setupAutoSync } from '@/lib/syncService';
 import { 
   Spade, Heart, Club, Diamond, Settings, Trophy, TrendingUp, 
-  BookOpen, BarChart3, User, Cloud 
+  BookOpen, BarChart3, User, Cloud, Brain 
 } from 'lucide-react';
 
 function AppContent() {
