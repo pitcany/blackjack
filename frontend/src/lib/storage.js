@@ -1,6 +1,6 @@
 // localStorage persistence utilities for Blackjack Trainer
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   GAME_CONFIG: 'blackjack_config',
   GAME_STATE: 'blackjack_state',
   GAME_STATS: 'blackjack_stats',
