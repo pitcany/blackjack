@@ -18,6 +18,13 @@ import { defaultConfig } from '@/lib/gameLogic';
 export function SettingsDialog({ open, onOpenChange, config, onApply }) {
   const [settings, setSettings] = useState(config);
 
+  // Sync local settings when dialog opens or config changes externally
+  React.useEffect(() => {
+    if (open) {
+      setSettings(config);
+    }
+  }, [open, config]);
+
   const handleApply = () => {
     onApply(settings);
     onOpenChange(false);

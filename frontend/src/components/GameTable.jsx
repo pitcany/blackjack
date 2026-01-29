@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { PlayingCard, HandDisplay } from './PlayingCard';
 import { GamePhase, calculateHandTotal } from '@/lib/gameLogic';
 
-export function GameTable({ 
-  gameState, 
-  actions, 
+export function GameTable({
+  gameState,
+  actions,
   getAvailableActions,
-  decksRemaining 
+  decksRemaining,
+  config
 }) {
-  const [betAmount, setBetAmount] = useState(25);
+  const [betAmount, setBetAmount] = useState(config?.minBet || 25);
   const { phase, playerHands, dealerCards, bankroll, message, runningCount } = gameState;
 
   // Auto-deal after starting round
@@ -230,8 +231,8 @@ export function GameTable({
                   <Input
                     type="number"
                     value={betAmount}
-                    onChange={(e) => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                    min={10}
+                    onChange={(e) => setBetAmount(Math.max(config?.minBet || 10, parseInt(e.target.value) || config?.minBet || 10))}
+                    min={config?.minBet || 10}
                     max={bankroll}
                     className="text-center text-lg font-bold"
                   />
@@ -239,7 +240,7 @@ export function GameTable({
 
                 <Button 
                   onClick={handleDeal}
-                  disabled={betAmount > bankroll || betAmount < 10}
+                  disabled={betAmount > bankroll || betAmount < (config?.minBet || 10)}
                   className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold py-6 text-lg shadow-gold"
                 >
                   Deal Cards

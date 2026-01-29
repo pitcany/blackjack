@@ -99,10 +99,10 @@ export function isBust(cards) {
   return calculateHandTotal(cards).total > 21;
 }
 
-// Check if can split
+// Check if can split (same rank, or any two 10-value cards)
 export function canSplit(cards) {
   if (cards.length !== 2) return false;
-  return cards[0].rank === cards[1].rank;
+  return cards[0].rank === cards[1].rank || (cards[0].value === 10 && cards[1].value === 10);
 }
 
 // Hi-Lo counting value

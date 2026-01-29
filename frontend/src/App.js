@@ -102,6 +102,7 @@ function App() {
             actions={actions}
             getAvailableActions={getAvailableActions}
             decksRemaining={decksRemaining}
+            config={config}
           />
         ) : (
           <CountingTrainer />
