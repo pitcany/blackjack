@@ -185,6 +185,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ PASSED - Settings dialog opens correctly via gear icon. All settings elements visible (Game Settings, Number of Decks, Starting Bankroll, Apply Settings). Settings can be applied successfully."
+      - working: true
+        agent: "testing"
+        comment: "✅ NEW FEATURES VERIFIED - All requested toggles found: 'Allow Surrender' toggle (enabled), 'Always Show Hints' toggle (disabled), 'Reset All Data' button present. Settings dialog fully functional with proper sections: Game Rules, Dealer Rules, Player Options, Strategy Hints, Data Management."
 
   - task: "Navigation Between Tabs"
     implemented: true
