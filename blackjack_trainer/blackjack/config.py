@@ -11,6 +11,7 @@ class GameConfig:
     num_decks: int = 6
     starting_bankroll: int = 1000
     min_bet: int = 10
+    max_bet: int = 500
     blackjack_payout: float = 1.5  # 3:2 payout
     dealer_hits_soft_17: bool = False  # S17 by default
     double_after_split: bool = True

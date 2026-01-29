@@ -113,8 +113,12 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     const shoe = shoeRef.current;
     
     setGameState(prev => {
-      const playerCards = [shoe.draw(), shoe.draw()];
-      const dealerCards = [shoe.draw(), shoe.draw()];
+      const pCard1 = shoe.draw();
+      const dCard1 = shoe.draw();
+      const pCard2 = shoe.draw();
+      const dCard2 = shoe.draw();
+      const playerCards = [pCard1, pCard2];
+      const dealerCards = [dCard1, dCard2];
       
       const newPlayerHands = [{
         ...prev.playerHands[0],
@@ -480,9 +484,14 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
   // Helper: Find next active hand
   const findNextActiveHand = (hands, currentIndex) => {
     for (let i = currentIndex + 1; i < hands.length; i++) {
-      if (!hands[i].resolved && !isBust(hands[i].cards)) {
-        return i;
+      const hand = hands[i];
+      if (hand.resolved || isBust(hand.cards)) continue;
+      // Skip split aces that already received their one card
+      if (hand.isSplitChild && hand.cards.length >= 2 &&
+          hand.cards[0].rank === Rank.ACE && config.splitAcesOneCardOnly) {
+        continue;
       }
+      return i;
     }
     return -1;
   };
@@ -686,46 +695,53 @@ export function useCountingTrainer() {
   }, [config]);
 
   const submitGuess = useCallback((rcGuess, tcGuess = null) => {
-    const isCorrectRC = rcGuess === state.expectedRC;
-    const decksRemaining = shoeRef.current?.decksRemaining() || 1;
-    const expectedTC = Math.round((state.expectedRC / decksRemaining) * 10) / 10;
-    const isCorrectTC = tcGuess !== null ? Math.abs(tcGuess - expectedTC) <= 0.5 : null;
+    let feedbackResult = null;
 
-    const feedback = {
-      isCorrectRC,
-      expectedRC: state.expectedRC,
-      userRC: rcGuess,
-      isCorrectTC,
-      expectedTC,
-      userTC: tcGuess,
-      decksRemaining: Math.round(decksRemaining * 100) / 100,
-      cardValues: state.currentCards.map(c => ({
-        card: c.toString(),
-        value: c.rank.symbol >= '2' && c.rank.symbol <= '6' ? '+1' :
-               c.rank.symbol >= '7' && c.rank.symbol <= '9' ? '0' : '-1'
-      }))
-    };
+    setState(prev => {
+      const isCorrectRC = rcGuess === prev.expectedRC;
+      const decksRemaining = shoeRef.current?.decksRemaining() || 1;
+      const safeDR = decksRemaining < 0.5 ? 0.5 : decksRemaining;
+      const expectedTC = Math.round((prev.expectedRC / safeDR) * 10) / 10;
+      const isCorrectTC = tcGuess !== null ? Math.abs(tcGuess - expectedTC) <= 0.5 : null;
 
-    setState(prev => ({
-      ...prev,
-      runningCount: state.expectedRC,
-      feedback,
-      showingCards: false
-    }));
+      const feedback = {
+        isCorrectRC,
+        expectedRC: prev.expectedRC,
+        userRC: rcGuess,
+        isCorrectTC,
+        expectedTC,
+        userTC: tcGuess,
+        decksRemaining: Math.round(decksRemaining * 100) / 100,
+        cardValues: prev.currentCards.map(c => ({
+          card: c.toString(),
+          value: c.rank.symbol >= '2' && c.rank.symbol <= '6' ? '+1' :
+                 c.rank.symbol >= '7' && c.rank.symbol <= '9' ? '0' : '-1'
+        }))
+      };
 
-    setStats(prev => {
-      const newStreak = isCorrectRC ? prev.streak + 1 : 0;
+      feedbackResult = feedback;
+
+      setStats(prevStats => {
+        const newStreak = isCorrectRC ? prevStats.streak + 1 : 0;
+        return {
+          attempts: prevStats.attempts + 1,
+          correctRC: prevStats.correctRC + (isCorrectRC ? 1 : 0),
+          correctTC: prevStats.correctTC + (isCorrectTC ? 1 : 0),
+          streak: newStreak,
+          bestStreak: Math.max(prevStats.bestStreak, newStreak)
+        };
+      });
+
       return {
-        attempts: prev.attempts + 1,
-        correctRC: prev.correctRC + (isCorrectRC ? 1 : 0),
-        correctTC: prev.correctTC + (isCorrectTC ? 1 : 0),
-        streak: newStreak,
-        bestStreak: Math.max(prev.bestStreak, newStreak)
+        ...prev,
+        runningCount: prev.expectedRC,
+        feedback,
+        showingCards: false
       };
     });
 
-    return feedback;
-  }, [state.expectedRC, state.currentCards]);
+    return feedbackResult;
+  }, []);
 
   const stop = useCallback(() => {
     setState(prev => ({ ...prev, isRunning: false }));

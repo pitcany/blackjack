@@ -41,6 +41,7 @@ class BlackjackEngine:
         )
         self.state = TableState(bankroll=self.config.starting_bankroll)
         self.stats = BlackjackStats()
+        self.stats.update_bankroll_extremes(self.state.bankroll)
         self._next_hand_id = 0
     
     def new_session(self) -> None:
@@ -75,6 +76,10 @@ class BlackjackEngine:
             self.state.message = f"Minimum bet is ${self.config.min_bet}"
             return False
         
+        if bet > self.config.max_bet:
+            self.state.message = f"Maximum bet is ${self.config.max_bet}"
+            return False
+
         if bet > self.state.bankroll:
             self.state.message = "Insufficient bankroll"
             return False
@@ -375,8 +380,10 @@ class BlackjackEngine:
     
     def _advance_to_next_hand(self) -> None:
         """Move to the next unresolved hand or dealer turn."""
-        # Find next unresolved hand
-        for i, hand in enumerate(self.state.player_hands):
+        # Find next unresolved hand after the current one
+        start = self.state.active_hand_index + 1
+        for i in range(start, len(self.state.player_hands)):
+            hand = self.state.player_hands[i]
             if not hand.resolved and not is_bust(hand.cards):
                 # Check if this hand can still act
                 if hand.is_split_child and hand.cards[0].rank == Rank.ACE:
@@ -423,7 +430,7 @@ class BlackjackEngine:
         profit = payout_for_outcome(outcome, hand.bet, self.config)
         
         # Return bet + profit to bankroll
-        if outcome in (Outcome.WIN, Outcome.BLACKJACK, Outcome.PUSH):
+        if outcome in (Outcome.WIN, Outcome.BLACKJACK):
             self.state.bankroll += hand.bet + profit
         elif outcome == Outcome.PUSH:
             self.state.bankroll += hand.bet

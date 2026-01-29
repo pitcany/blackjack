@@ -55,6 +55,8 @@ class BlackjackStats:
             self.hands_lost += 1
             self.busts += 1
             self.total_lost += abs(profit)
+            if is_doubled:
+                self.doubles_lost += 1
         elif outcome == "PUSH":
             self.hands_pushed += 1
         
