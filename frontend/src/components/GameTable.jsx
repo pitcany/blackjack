@@ -29,9 +29,7 @@ export function GameTable({
   }, [phase, actions]);
 
   const handleDeal = () => {
-    if (actions.startRound(betAmount)) {
-      // Deal will happen in useEffect
-    }
+    actions.startRound(betAmount);
   };
 
   const handleQuickBet = (amount) => {
@@ -240,7 +238,7 @@ export function GameTable({
 
                 <Button 
                   onClick={handleDeal}
-                  disabled={betAmount > bankroll || betAmount < (config?.minBet || 10)}
+                  disabled={!betAmount || isNaN(betAmount) || betAmount > bankroll || betAmount < (config?.minBet || 10)}
                   className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold py-6 text-lg shadow-gold"
                 >
                   Deal Cards
