@@ -168,18 +168,26 @@ export function CountingTrainer() {
                 {/* Cards Display */}
                 <div className="flex flex-col items-center">
                   <span className="text-sm text-muted-foreground mb-4">
-                    {state.showingCards ? 'Count these cards:' : 'Enter your count'}
+                    {state.currentCards.length > 0 
+                      ? (state.showingCards ? 'Count these cards:' : 'Enter your count')
+                      : 'Loading cards...'}
                   </span>
                   <div className="flex gap-3 justify-center flex-wrap min-h-32">
-                    {state.currentCards.map((card, index) => (
-                      <PlayingCard
-                        key={index}
-                        card={card}
-                        size="xl"
-                        animate={state.showingCards}
-                        delay={index * 150}
-                      />
-                    ))}
+                    {state.currentCards.length > 0 ? (
+                      state.currentCards.map((card, index) => (
+                        <PlayingCard
+                          key={index}
+                          card={card}
+                          size="xl"
+                          animate={true}
+                          delay={index * 150}
+                        />
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-center h-32 text-muted-foreground">
+                        Dealing cards...
+                      </div>
+                    )}
                   </div>
                 </div>
 
