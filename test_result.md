@@ -107,75 +107,93 @@ user_problem_statement: "Test the Blackjack Trainer web application with blackja
 frontend:
   - task: "Blackjack Game Mode - Betting and Deal Cards"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/GameTable.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify betting chips ($10, $25, $50, $100, $250), deal cards functionality, and bankroll updates"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - All betting chips ($10, $25, $50, $100, $250) are visible and functional. Deal Cards button works correctly. Bankroll updates properly from $1000 to $975 after $25 bet. Cards are displayed after dealing (20 cards visible)."
 
   - task: "Blackjack Game Actions - Hit, Stand, Double, Split"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/GameTable.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify game actions work correctly and are available when appropriate"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - All game action buttons (Hit, Stand, Double, Split) are visible and enabled when appropriate. Hit action executed successfully. Game completes properly with New Round button appearing after round completion."
 
   - task: "Running Count Display and Updates"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/GameTable.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify running count (RC) updates correctly as cards are dealt"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Running Count (RC) is displayed correctly and updates as cards are dealt. Observed RC: -1 after initial deal, indicating proper Hi-Lo counting implementation."
 
   - task: "Card Counting Training Mode"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/components/CountingTrainer.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify training settings, card display, count input, and feedback system"
+      - working: false
+        agent: "testing"
+        comment: "❌ FAILED - Training mode starts but no cards are displayed and no input fields are available. Shows 'Enter your count' text but no interface to actually enter counts. Training cards count shows 6 cards but they are not visible to user. Input fields for RC/TC are missing."
 
   - task: "Settings Dialog Functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/SettingsDialog.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify settings dialog opens, changes can be made, and settings are applied"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Settings dialog opens correctly via gear icon. All settings elements visible (Game Settings, Number of Decks, Starting Bankroll, Apply Settings). Settings can be applied successfully."
 
   - task: "Navigation Between Tabs"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Initial testing required - need to verify navigation between Blackjack and Card Counting tabs works correctly"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Navigation between Blackjack and Card Counting tabs works perfectly. Blackjack tab is active by default. Tab switching is smooth and maintains proper active state styling."
 
 metadata:
   created_by: "testing_agent"
