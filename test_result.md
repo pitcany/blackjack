@@ -223,8 +223,10 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "JavaScript Runtime Errors"
+  stuck_tasks:
+    - "JavaScript Runtime Errors"
   test_all: false
   test_priority: "high_first"
 
