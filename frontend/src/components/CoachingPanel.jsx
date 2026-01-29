@@ -68,8 +68,13 @@ function getCardDisplay(value) {
 
 export function CoachingPanel() {
   const [activeView, setActiveView] = useState('dashboard');
-  const [weaknesses, setWeaknesses] = useState([]);
-  const [performanceStats, setPerformanceStats] = useState(null);
+  
+  // Initialize state with data from storage (lazy initialization)
+  const [weaknesses, setWeaknesses] = useState(() => {
+    const strategyStats = loadStrategyStats();
+    return analyzeWeaknesses(strategyStats);
+  });
+  const [performanceStats, setPerformanceStats] = useState(() => getPerformanceStats());
   const [currentSession, setCurrentSession] = useState(null);
   const [drillState, setDrillState] = useState({
     currentDrillIndex: 0,
@@ -79,18 +84,6 @@ export function CoachingPanel() {
     isComplete: false
   });
   const [showAnswer, setShowAnswer] = useState(false);
-  const isInitialMount = useRef(true);
-
-  // Load data on mount
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      const strategyStats = loadStrategyStats();
-      const analyzed = analyzeWeaknesses(strategyStats);
-      setWeaknesses(analyzed);
-      setPerformanceStats(getPerformanceStats());
-    }
-  }, []);
 
   const refreshData = useCallback(() => {
     const strategyStats = loadStrategyStats();
