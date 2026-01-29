@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { PlayingCard, HandDisplay } from './PlayingCard';
 import { GamePhase, calculateHandTotal } from '@/lib/gameLogic';
 
-export function GameTable({ 
-  gameState, 
-  actions, 
+export function GameTable({
+  gameState,
+  actions,
   getAvailableActions,
-  decksRemaining 
+  decksRemaining,
+  config
 }) {
-  const [betAmount, setBetAmount] = useState(25);
+  const [betAmount, setBetAmount] = useState(config?.minBet || 25);
   const { phase, playerHands, dealerCards, bankroll, message, runningCount } = gameState;
 
   // Auto-deal after starting round
@@ -28,9 +29,7 @@ export function GameTable({
   }, [phase, actions]);
 
   const handleDeal = () => {
-    if (actions.startRound(betAmount)) {
-      // Deal will happen in useEffect
-    }
+    actions.startRound(betAmount);
   };
 
   const handleQuickBet = (amount) => {
@@ -38,7 +37,6 @@ export function GameTable({
   };
 
   const availableActions = getAvailableActions();
-  const activeHand = playerHands[gameState.activeHandIndex];
   const dealerTotal = calculateHandTotal(dealerCards);
   const showDealerHole = phase === GamePhase.DEALER_TURN || phase === GamePhase.ROUND_OVER;
 
@@ -66,7 +64,7 @@ export function GameTable({
               phase === GamePhase.PLAYER_TURN && 'bg-primary text-primary-foreground'
             )}
           >
-            {phase.replace('_', ' ')}
+            {phase.replaceAll('_', ' ')}
           </Badge>
         </div>
       </div>
@@ -201,50 +199,65 @@ export function GameTable({
         {phase === GamePhase.BETTING && (
           <Card className="max-w-md mx-auto bg-card/50 backdrop-blur border-border/50">
             <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-lg font-display text-foreground">Place Your Bet</span>
-                
-                {/* Quick bet chips */}
-                <div className="flex gap-2">
-                  {[10, 25, 50, 100, 250].map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => handleQuickBet(amount)}
-                      disabled={amount > bankroll}
-                      className={cn(
-                        'w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold',
-                        'transition-all duration-200 hover:scale-110',
-                        betAmount === amount ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '',
-                        amount <= bankroll 
-                          ? 'bg-gradient-to-b from-primary to-primary/80 text-primary-foreground shadow-gold cursor-pointer' 
-                          : 'bg-muted text-muted-foreground cursor-not-allowed'
-                      )}
-                    >
-                      ${amount}
-                    </button>
-                  ))}
+              {bankroll < (config?.minBet || 10) ? (
+                <div className="flex flex-col items-center gap-4">
+                  <span className="text-lg font-display text-destructive">Out of chips!</span>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Your bankroll (${bankroll}) is below the minimum bet (${config?.minBet || 10}).
+                  </p>
+                  <Button
+                    onClick={actions.resetGame}
+                    className="w-full bg-primary hover:bg-primary/80 text-primary-foreground font-bold py-6 text-lg"
+                  >
+                    Start New Session
+                  </Button>
                 </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <span className="text-lg font-display text-foreground">Place Your Bet</span>
 
-                <div className="flex items-center gap-3 w-full max-w-xs">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    type="number"
-                    value={betAmount}
-                    onChange={(e) => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                    min={10}
-                    max={bankroll}
-                    className="text-center text-lg font-bold"
-                  />
+                  {/* Quick bet chips */}
+                  <div className="flex gap-2">
+                    {[10, 25, 50, 100, 250].map(amount => (
+                      <button
+                        key={amount}
+                        onClick={() => handleQuickBet(amount)}
+                        disabled={amount > bankroll}
+                        className={cn(
+                          'w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold',
+                          'transition-all duration-200 hover:scale-110',
+                          betAmount === amount ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '',
+                          amount <= bankroll
+                            ? 'bg-gradient-to-b from-primary to-primary/80 text-primary-foreground shadow-gold cursor-pointer'
+                            : 'bg-muted text-muted-foreground cursor-not-allowed'
+                        )}
+                      >
+                        ${amount}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3 w-full max-w-xs">
+                    <span className="text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      value={betAmount}
+                      onChange={(e) => setBetAmount(Math.max(config?.minBet || 10, parseInt(e.target.value) || config?.minBet || 10))}
+                      min={config?.minBet || 10}
+                      max={bankroll}
+                      className="text-center text-lg font-bold"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleDeal}
+                    disabled={!betAmount || isNaN(betAmount) || betAmount > bankroll || betAmount < (config?.minBet || 10)}
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold py-6 text-lg shadow-gold"
+                  >
+                    Deal Cards
+                  </Button>
                 </div>
-
-                <Button 
-                  onClick={handleDeal}
-                  disabled={betAmount > bankroll || betAmount < 10}
-                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold py-6 text-lg shadow-gold"
-                >
-                  Deal Cards
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
