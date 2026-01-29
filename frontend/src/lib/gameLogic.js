@@ -99,10 +99,10 @@ export function isBust(cards) {
   return calculateHandTotal(cards).total > 21;
 }
 
-// Check if can split
+// Check if can split (same rank, or any two 10-value cards)
 export function canSplit(cards) {
   if (cards.length !== 2) return false;
-  return cards[0].rank === cards[1].rank;
+  return cards[0].rank === cards[1].rank || (cards[0].value === 10 && cards[1].value === 10);
 }
 
 // Hi-Lo counting value
@@ -161,7 +161,7 @@ export class Shoe {
 
   draw() {
     if (this.cards.length === 0) {
-      throw new Error('Shoe is empty!');
+      this.buildAndShuffle();
     }
     return this.cards.pop();
   }
@@ -204,19 +204,20 @@ export function dealerShouldHit(cards, config) {
 }
 
 // Compare hands
-export function compareHands(playerCards, dealerCards) {
+// isSplitHand: if true, a 2-card 21 is not a natural blackjack (pays 1:1, not 3:2)
+export function compareHands(playerCards, dealerCards, isSplitHand = false) {
   const playerResult = calculateHandTotal(playerCards);
   const dealerResult = calculateHandTotal(dealerCards);
-  
-  const playerBJ = isBlackjack(playerCards);
+
+  const playerBJ = !isSplitHand && isBlackjack(playerCards);
   const dealerBJ = isBlackjack(dealerCards);
-  
+
   if (isBust(playerCards)) return Outcome.BUST;
   if (playerBJ && dealerBJ) return Outcome.PUSH;
   if (playerBJ) return Outcome.BLACKJACK;
   if (dealerBJ) return Outcome.LOSE;
   if (isBust(dealerCards)) return Outcome.WIN;
-  
+
   if (playerResult.total > dealerResult.total) return Outcome.WIN;
   if (playerResult.total < dealerResult.total) return Outcome.LOSE;
   return Outcome.PUSH;
