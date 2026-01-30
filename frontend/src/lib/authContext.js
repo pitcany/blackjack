@@ -13,7 +13,10 @@ export function AuthProvider({ children }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    checkAuth();
+    const hash = window.location.hash;
+    if (!hash.includes('session_id=')) {
+      checkAuth();
+    }
   }, []);
 
   // Handle OAuth callback (session_id in URL hash)
