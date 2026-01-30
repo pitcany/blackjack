@@ -105,8 +105,15 @@ async def get_current_user(request: Request) -> Optional[User]:
     
     # Check expiry
     expires_at = session_doc.get("expires_at")
+    if not expires_at:
+        return None
     if isinstance(expires_at, str):
-        expires_at = datetime.fromisoformat(expires_at)
+        try:
+            expires_at = datetime.fromisoformat(expires_at)
+        except ValueError:
+            return None
+    if not isinstance(expires_at, datetime):
+        return None
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     
@@ -326,6 +333,22 @@ async def get_user_stats(request: Request):
     
     return stats_doc
 
+def merge_stats(existing_stats: Dict[str, Any], new_stats: Dict[str, Any]) -> Dict[str, Any]:
+    if not new_stats:
+        return existing_stats
+    merged = {**existing_stats}
+    for key, value in new_stats.items():
+        if key in merged:
+            if isinstance(value, (int, float)) and isinstance(merged[key], (int, float)):
+                merged[key] = max(merged[key], value)
+            elif isinstance(value, dict) and isinstance(merged[key], dict):
+                merged[key] = merge_stats(merged[key], value)
+            else:
+                merged[key] = value
+        else:
+            merged[key] = value
+    return merged
+
 @api_router.post("/sync/stats")
 async def update_user_stats(request: Request, data: SyncData):
     """Update user's synced stats (merge strategy)"""
@@ -344,23 +367,6 @@ async def update_user_stats(request: Request, data: SyncData):
             "strategy_stats": {},
             "training_stats": {}
         }
-    
-    # Merge stats (take higher values for cumulative stats)
-    def merge_stats(existing_stats: dict, new_stats: dict) -> dict:
-        if not new_stats:
-            return existing_stats
-        merged = {**existing_stats}
-        for key, value in new_stats.items():
-            if key in merged:
-                if isinstance(value, (int, float)) and isinstance(merged[key], (int, float)):
-                    merged[key] = max(merged[key], value)
-                elif isinstance(value, dict) and isinstance(merged[key], dict):
-                    merged[key] = merge_stats(merged[key], value)
-                else:
-                    merged[key] = value
-            else:
-                merged[key] = value
-        return merged
     
     updated_stats = {
         "user_id": user.user_id,
@@ -487,19 +493,6 @@ async def full_sync(request: Request, data: SyncData):
             {"user_id": user.user_id},
             {"_id": 0}
         ) or {"game_stats": {}, "strategy_stats": {}, "training_stats": {}}
-        
-        def merge_stats(existing: dict, new: dict) -> dict:
-            if not new:
-                return existing
-            merged = {**existing}
-            for key, value in new.items():
-                if key in merged and isinstance(value, (int, float)) and isinstance(merged[key], (int, float)):
-                    merged[key] = max(merged[key], value)
-                elif key in merged and isinstance(value, dict) and isinstance(merged[key], dict):
-                    merged[key] = merge_stats(merged[key], value)
-                else:
-                    merged[key] = value
-            return merged
         
         await db.stats.update_one(
             {"user_id": user.user_id},
