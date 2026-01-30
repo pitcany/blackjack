@@ -14,13 +14,20 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { defaultConfig } from '@/lib/gameLogic';
 import { clearAllData } from '@/lib/storage';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useAuth } from '@/lib/authContext';
+import { fullSync, getSyncStatus } from '@/lib/syncService';
+import { toast } from 'sonner';
+import { AlertTriangle, Trash2, User, Cloud, RefreshCw, LogIn, LogOut, Loader2, CheckCircle } from 'lucide-react';
 
 export function SettingsDialog({ open, onOpenChange, config, onApply }) {
   const [settings, setSettings] = useState(config);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   // Sync local settings when dialog opens or config changes externally
   React.useEffect(() => {
@@ -43,6 +50,33 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
     setShowResetConfirm(false);
     window.location.reload();
   };
+
+  const handleSync = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in first');
+      return;
+    }
+    setSyncing(true);
+    try {
+      const result = await fullSync();
+      if (result.success) {
+        toast.success('Data synced successfully!');
+      } else {
+        toast.error(`Sync failed: ${result.reason}`);
+      }
+    } catch (error) {
+      toast.error('Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Signed out');
+  };
+
+  const syncStatus = getSyncStatus();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,6 +229,82 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
                 onCheckedChange={(v) => setSettings(s => ({ ...s, alwaysShowHints: v }))}
               />
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Account & Sync */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Account & Cloud Sync
+            </h4>
+
+            {isAuthenticated && user ? (
+              <>
+                {/* User Info */}
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.picture} alt={user.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <Badge variant="outline" className="text-success border-success/30 text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Synced
+                  </Badge>
+                </div>
+
+                {/* Sync Button */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="flex-1"
+                    data-testid="settings-sync-button"
+                  >
+                    {syncing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    data-testid="settings-logout-button"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {syncStatus.lastSync && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Last synced: {new Date(syncStatus.lastSync).toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to sync your progress across devices.
+                </p>
+                <Button
+                  onClick={login}
+                  className="w-full"
+                  data-testid="settings-login-button"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign in with Google
+                </Button>
+              </div>
+            )}
           </div>
 
           <Separator />
