@@ -24,7 +24,7 @@ function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   const { 
     gameState, 

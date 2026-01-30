@@ -369,7 +369,7 @@ export function analyzeWeaknesses(strategyStats) {
     let category = WeaknessCategory.HARD_TOTALS;
     
     if (correctAction === 'SPLIT') {
-      category = WeaknessCategory.SPLITTING;
+      category = WeaknessCategory.PAIRS;
     } else if (correctAction === 'SURRENDER') {
       category = WeaknessCategory.SURRENDER;
     } else if (correctAction === 'DOUBLE') {
