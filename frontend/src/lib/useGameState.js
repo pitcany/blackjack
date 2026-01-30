@@ -186,8 +186,25 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
     return -1;
   };
 
+  // Helper: Update stats for resolved hands
+  const updateStatsForHands = useCallback((resolvedHands) => {
+    const outcomes = resolvedHands.map(h => h.result);
+    const wins = outcomes.filter(o => o === Outcome.WIN || o === Outcome.BLACKJACK).length;
+    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST).length;
+    const bjs = outcomes.filter(o => o === Outcome.BLACKJACK).length;
+    const pushCount = outcomes.filter(o => o === Outcome.PUSH).length;
+
+    setStats(prev => ({
+      handsPlayed: prev.handsPlayed + resolvedHands.length,
+      handsWon: prev.handsWon + wins,
+      handsLost: prev.handsLost + losses,
+      blackjacks: prev.blackjacks + bjs,
+      pushes: prev.pushes + pushCount
+    }));
+  }, []);
+
   // Helper: Run dealer turn
-  const runDealerTurn = (prevState, hands, runningCount) => {
+  const runDealerTurn = useCallback((prevState, hands, runningCount) => {
     const shoe = shoeRef.current;
     let dealerCards = [...prevState.dealerCards];
     let newRunningCount = runningCount;
@@ -240,24 +257,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
       phase: GamePhase.ROUND_OVER,
       message: `Dealer: ${dealerTotal}${dealerBust ? ' (Bust!)' : ''}. ${resultSummary}`
     };
-  };
-
-  // Helper: Update stats for resolved hands
-  const updateStatsForHands = (resolvedHands) => {
-    const outcomes = resolvedHands.map(h => h.result);
-    const wins = outcomes.filter(o => o === Outcome.WIN || o === Outcome.BLACKJACK).length;
-    const losses = outcomes.filter(o => o === Outcome.LOSE || o === Outcome.BUST).length;
-    const bjs = outcomes.filter(o => o === Outcome.BLACKJACK).length;
-    const pushCount = outcomes.filter(o => o === Outcome.PUSH).length;
-
-    setStats(prev => ({
-      handsPlayed: prev.handsPlayed + resolvedHands.length,
-      handsWon: prev.handsWon + wins,
-      handsLost: prev.handsLost + losses,
-      blackjacks: prev.blackjacks + bjs,
-      pushes: prev.pushes + pushCount
-    }));
-  };
+  }, [config, updateStatsForHands]);
 
   // Deal initial cards
   const dealInitial = useCallback(() => {
@@ -355,7 +355,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: 'Your turn'
       };
     });
-  }, [config]);
+  }, [config, updateStatsForHands]);
 
   // Take insurance
   const takeInsurance = useCallback((take) => {
@@ -445,7 +445,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: message + '. Your turn.'
       };
     });
-  }, [config]);
+  }, [config, updateStatsForHands]);
 
   // Get available actions
   const getAvailableActions = useCallback(() => {
@@ -601,7 +601,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `You have ${total}${isSoft ? ' (soft)' : ''}`
       };
     });
-  }, [gameState.phase, trackAction]);
+  }, [gameState.phase, runDealerTurn, trackAction]);
 
   // Stand action
   const stand = useCallback(() => {
@@ -630,7 +630,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         lastActionCorrect: null
       };
     });
-  }, [gameState.phase, trackAction]);
+  }, [gameState.phase, runDealerTurn, trackAction]);
 
   // Double action
   const double = useCallback(() => {
@@ -683,7 +683,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         message: `Doubled! ${isBust(newHand.cards) ? 'Bust!' : `Got ${total}`}`
       };
     });
-  }, [gameState.phase, trackAction]);
+  }, [gameState.phase, runDealerTurn, trackAction]);
 
   // Split action
   const split = useCallback(() => {
@@ -747,7 +747,7 @@ export function useBlackjackGame(initialConfig = defaultConfig) {
         lastActionCorrect: null
       };
     });
-  }, [gameState.phase, config, trackAction]);
+  }, [gameState.phase, config, runDealerTurn, trackAction]);
 
   // Surrender action
   const surrender = useCallback(() => {
