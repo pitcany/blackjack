@@ -163,7 +163,7 @@ npm test
 ### Run E2E Tests
 
 ```bash
-npm run test:e2e
+npx playwright test
 ```
 
 ## Project Structure
@@ -179,8 +179,7 @@ blackjack/
 ├── backend/           # FastAPI backend
 │   ├── server.py      # API endpoints
 │   └── tests/        # Backend tests
-├── e2e/              # Playwright tests
-└── docs/             # Documentation
+└── tests/            # Playwright E2E tests
 ```
 
 ## Contributing
