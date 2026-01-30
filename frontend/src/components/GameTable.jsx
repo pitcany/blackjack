@@ -61,6 +61,12 @@ export function GameTable({
     }
   }, [bankroll, prevBankroll]);
 
+  const handleDeal = useCallback(() => {
+    if (actions.startRound(betAmount)) {
+      setShowHint(false);
+    }
+  }, [actions, betAmount]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -103,13 +109,7 @@ export function GameTable({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [phase, getAvailableActions, actions]);
-
-  const handleDeal = () => {
-    if (actions.startRound(betAmount)) {
-      setShowHint(false);
-    }
-  };
+  }, [phase, getAvailableActions, actions, handleDeal]);
 
   const handleQuickBet = (amount) => {
     setBetAmount(amount);
