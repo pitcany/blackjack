@@ -29,6 +29,13 @@ export function SettingsDialog({ open, onOpenChange, config, onApply }) {
   const [syncing, setSyncing] = useState(false);
   const { user, isAuthenticated, login, logout } = useAuth();
 
+  // Sync local settings when dialog opens or config changes externally
+  React.useEffect(() => {
+    if (open) {
+      setSettings(config);
+    }
+  }, [open, config]);
+
   const handleApply = () => {
     onApply(settings);
     onOpenChange(false);
