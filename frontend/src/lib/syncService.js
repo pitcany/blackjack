@@ -18,6 +18,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 let syncInProgress = false;
 let offlineQueue = [];
 let lastSyncTime = null;
+let processingQueue = false;
 
 /**
  * Merge stats with server (take max for cumulative values)
@@ -221,6 +222,8 @@ export async function syncStats() {
  * Add operation to offline queue for later processing
  */
 function addToOfflineQueue(operation) {
+  if (processingQueue) return;
+  
   offlineQueue.push({
     ...operation,
     timestamp: Date.now()
@@ -238,6 +241,8 @@ function addToOfflineQueue(operation) {
  * Process offline queue when back online
  */
 async function processOfflineQueue() {
+  if (processingQueue) return;
+  
   // Load persisted queue
   try {
     const stored = localStorage.getItem('blackjack_sync_queue');
@@ -253,6 +258,8 @@ async function processOfflineQueue() {
   const authenticated = await isAuthenticated();
   if (!authenticated) return;
 
+  processingQueue = true;
+  
   // Process queue
   const processed = [];
   for (const op of offlineQueue) {
@@ -275,6 +282,8 @@ async function processOfflineQueue() {
   } catch (e) {
     console.error('Failed to update offline queue:', e);
   }
+  
+  processingQueue = false;
 }
 
 /**
